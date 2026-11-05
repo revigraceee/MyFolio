@@ -1,0 +1,14 @@
+<?php
+// admin/includes/admin_footer.php
+?>
+        </main>
+    </div>
+</div>
+
+<!-- Bootstrap 5.3 Bundle JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Admin Custom JS -->
+<script src="../assets/js/admin.js"></script>
+</body>
+</html>
+

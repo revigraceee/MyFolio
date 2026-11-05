@@ -1,0 +1,10 @@
+# .gitignore for MyFolio
+.vscode/
+.idea/
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Temporary files
+*.tmp
+*.log
