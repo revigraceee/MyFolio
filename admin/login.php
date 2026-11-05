@@ -183,10 +183,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             max-width: 320px;
         }
 
-        .feature-list {
+        /* Illustration */
+        .login-illustration {
+            margin-top: 32px;
+            margin-bottom: 28px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+        }
+        .login-illustration svg {
+            width: 100%;
+            max-width: 290px;
+            height: auto;
+            filter: drop-shadow(0 16px 36px rgba(0,0,0,0.3));
+            animation: floatImg 4s ease-in-out infinite;
+        }
+        @keyframes floatImg {
+            0%, 100% { transform: translateY(0px); }
+            50%       { transform: translateY(-8px); }
+        }
+
+                .feature-list {
             list-style: none;
             padding: 0;
-            margin-top: 32px;
+            margin-top: 0;
             display: flex;
             flex-direction: column;
             gap: 14px;
@@ -486,6 +508,59 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <p class="left-desc">
             Panel administrasi terpusat untuk mengelola profil, proyek, pengalaman, dan keahlian secara profesional.
         </p>
+
+
+        <!-- Illustration -->
+        <div class="login-illustration">
+            <svg viewBox="0 0 400 320" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <!-- Background card / laptop screen -->
+                <rect x="60" y="40" width="280" height="180" rx="16" fill="rgba(255,255,255,0.07)" stroke="rgba(255,255,255,0.15)" stroke-width="1.5"/>
+                <!-- Screen inner -->
+                <rect x="76" y="56" width="248" height="148" rx="10" fill="rgba(37,41,31,0.6)"/>
+                <!-- Top bar dots -->
+                <circle cx="96" cy="68" r="4" fill="#ff6b6b" opacity="0.8"/>
+                <circle cx="110" cy="68" r="4" fill="#ffd93d" opacity="0.8"/>
+                <circle cx="124" cy="68" r="4" fill="#6bcb77" opacity="0.8"/>
+
+                <!-- Code lines simulation -->
+                <rect x="92" y="84" width="80" height="6" rx="3" fill="rgba(220,227,203,0.5)"/>
+                <rect x="92" y="98" width="120" height="6" rx="3" fill="rgba(138,154,91,0.6)"/>
+                <rect x="92" y="112" width="60" height="6" rx="3" fill="rgba(220,227,203,0.3)"/>
+                <rect x="92" y="126" width="100" height="6" rx="3" fill="rgba(138,154,91,0.5)"/>
+                <rect x="92" y="140" width="90" height="6" rx="3" fill="rgba(220,227,203,0.4)"/>
+                <rect x="92" y="154" width="110" height="6" rx="3" fill="rgba(138,154,91,0.3)"/>
+                <rect x="92" y="168" width="70" height="6" rx="3" fill="rgba(220,227,203,0.5)"/>
+                <rect x="92" y="182" width="130" height="6" rx="3" fill="rgba(138,154,91,0.6)"/>
+
+                <!-- Right card / chart -->
+                <rect x="210" y="82" width="104" height="118" rx="10" fill="rgba(220,227,203,0.08)" stroke="rgba(220,227,203,0.2)" stroke-width="1"/>
+                <!-- Bar chart -->
+                <rect x="223" y="140" width="14" height="40" rx="4" fill="rgba(138,154,91,0.5)"/>
+                <rect x="242" y="125" width="14" height="55" rx="4" fill="rgba(220,227,203,0.6)"/>
+                <rect x="261" y="130" width="14" height="50" rx="4" fill="rgba(138,154,91,0.5)"/>
+                <rect x="280" y="115" width="14" height="65" rx="4" fill="rgba(220,227,203,0.7)"/>
+                <!-- Chart label -->
+                <rect x="223" y="96" width="80" height="6" rx="3" fill="rgba(220,227,203,0.4)"/>
+                <rect x="223" y="107" width="55" height="5" rx="2.5" fill="rgba(138,154,91,0.4)"/>
+
+                <!-- Laptop base -->
+                <rect x="30" y="218" width="340" height="12" rx="6" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+                <rect x="130" y="228" width="140" height="6" rx="3" fill="rgba(255,255,255,0.05)"/>
+
+                <!-- Floating badge top-right -->
+                <rect x="295" y="22" width="90" height="32" rx="10" fill="rgba(220,227,203,0.15)" stroke="rgba(220,227,203,0.3)" stroke-width="1"/>
+                <text x="313" y="42" font-family="Inter, sans-serif" font-size="11" fill="rgba(220,227,203,0.9)" font-weight="600">✦ Portfolio</text>
+
+                <!-- Floating badge bottom-left -->
+                <rect x="18" y="250" width="100" height="32" rx="10" fill="rgba(92,111,43,0.3)" stroke="rgba(138,154,91,0.4)" stroke-width="1"/>
+                <text x="30" y="270" font-family="Inter, sans-serif" font-size="11" fill="rgba(220,227,203,0.85)" font-weight="600">📊 Analytics</text>
+
+                <!-- Star decorations -->
+                <text x="52" y="38" font-size="12" fill="rgba(220,227,203,0.4)">✦</text>
+                <text x="355" y="195" font-size="10" fill="rgba(220,227,203,0.3)">✦</text>
+                <text x="22" y="135" font-size="8" fill="rgba(220,227,203,0.25)">✦</text>
+            </svg>
+        </div>
 
         <ul class="feature-list">
             <li>
