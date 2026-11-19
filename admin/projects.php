@@ -1,8 +1,14 @@
 <?php
 // admin/projects.php
+$pageTitle    = 'Manage Projects';
+$pageSubtitle = 'Kelola portofolio karya, detail studi kasus, status draft/published, dan unggulan';
+$currentPage  = 'projects';
+
 require_once __DIR__ . '/includes/admin_init.php';
 
-// Handle Actions (POST) BEFORE header output
+// ══════════════════════════════════════════════════════════
+//  POST HANDLERS — semua sebelum HTML output
+// ══════════════════════════════════════════════════════════
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $token = $_POST['csrf_token'] ?? '';
     if (!verify_csrf_token($token)) {
@@ -13,11 +19,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $action = $_POST['action'] ?? '';
 
-    // ADD PROJECT
+    // ── TAMBAH PROYEK ────────────────────────────────────────
     if ($action === 'add') {
         $title       = trim($_POST['title'] ?? '');
         $slug        = trim($_POST['slug'] ?? '') ?: generate_slug($title);
-        $category    = trim($_POST['category'] ?? 'Business Planning');
+        $categoryId  = (int)($_POST['category_id'] ?? 0) ?: null;   // FK ke project_categories
         $shortDesc   = trim($_POST['short_description'] ?? '');
         $desc        = trim($_POST['description'] ?? '');
         $role        = trim($_POST['role'] ?? '');
@@ -27,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $projUrl     = trim($_POST['project_url'] ?? '');
         $repoUrl     = trim($_POST['repository_url'] ?? '');
         $isFeatured  = isset($_POST['is_featured']) ? 1 : 0;
-        $status      = $_POST['status'] === 'draft' ? 'draft' : 'published';
+        $status      = ($_POST['status'] ?? 'published') === 'draft' ? 'draft' : 'published';
         $sortOrder   = (int)($_POST['sort_order'] ?? 0);
         $thumbnail   = 'placeholder.png';
 
@@ -36,21 +42,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($up) $thumbnail = $up;
         }
 
+        // Dapatkan nama kategori untuk kolom category (backward-compat)
+        $catName = '';
+        if ($categoryId) {
+            $catRow = $pdo->prepare("SELECT category_name FROM project_categories WHERE id = ?");
+            $catRow->execute([$categoryId]);
+            $catName = $catRow->fetchColumn() ?: '';
+        }
+
         try {
-            $stmt = $pdo->prepare("INSERT INTO projects (title, slug, category, short_description, description, role, process, result, tools, thumbnail, project_url, repository_url, is_featured, status, sort_order, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
-            $stmt->execute([$title, $slug, $category, $shortDesc, $desc, $role, $process, $result, $tools, $thumbnail, $projUrl, $repoUrl, $isFeatured, $status, $sortOrder]);
+            $stmt = $pdo->prepare("
+                INSERT INTO projects
+                    (title, slug, category_id, category, short_description, description,
+                     role, process, result, tools, thumbnail, project_url, repository_url,
+                     is_featured, status, sort_order, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+            ");
+            $stmt->execute([
+                $title, $slug, $categoryId, $catName,
+                $shortDesc, $desc, $role, $process, $result, $tools,
+                $thumbnail, $projUrl, $repoUrl,
+                $isFeatured, $status, $sortOrder
+            ]);
             set_flash('success', 'Proyek baru berhasil ditambahkan!');
         } catch (PDOException $e) {
             set_flash('danger', 'Gagal menambah proyek: ' . $e->getMessage());
         }
+
+        header('Location: projects.php');
+        exit;
     }
 
-    // EDIT PROJECT
+    // ── EDIT PROYEK ──────────────────────────────────────────
     if ($action === 'edit') {
         $id          = (int)($_POST['project_id'] ?? 0);
         $title       = trim($_POST['title'] ?? '');
         $slug        = trim($_POST['slug'] ?? '') ?: generate_slug($title);
-        $category    = trim($_POST['category'] ?? 'Business Planning');
+        $categoryId  = (int)($_POST['category_id'] ?? 0) ?: null;
         $shortDesc   = trim($_POST['short_description'] ?? '');
         $desc        = trim($_POST['description'] ?? '');
         $role        = trim($_POST['role'] ?? '');
@@ -60,7 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $projUrl     = trim($_POST['project_url'] ?? '');
         $repoUrl     = trim($_POST['repository_url'] ?? '');
         $isFeatured  = isset($_POST['is_featured']) ? 1 : 0;
-        $status      = $_POST['status'] === 'draft' ? 'draft' : 'published';
+        $status      = ($_POST['status'] ?? 'published') === 'draft' ? 'draft' : 'published';
         $sortOrder   = (int)($_POST['sort_order'] ?? 0);
         $thumbnail   = $_POST['current_thumbnail'] ?? 'placeholder.png';
 
@@ -69,57 +97,93 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($up) $thumbnail = $up;
         }
 
+        // Sync kolom category (teks) agar backward-compat
+        $catName = '';
+        if ($categoryId) {
+            $catRow = $pdo->prepare("SELECT category_name FROM project_categories WHERE id = ?");
+            $catRow->execute([$categoryId]);
+            $catName = $catRow->fetchColumn() ?: '';
+        }
+
         try {
-            $stmt = $pdo->prepare("UPDATE projects SET title = ?, slug = ?, category = ?, short_description = ?, description = ?, role = ?, process = ?, result = ?, tools = ?, thumbnail = ?, project_url = ?, repository_url = ?, is_featured = ?, status = ?, sort_order = ? WHERE id = ?");
-            $stmt->execute([$title, $slug, $category, $shortDesc, $desc, $role, $process, $result, $tools, $thumbnail, $projUrl, $repoUrl, $isFeatured, $status, $sortOrder, $id]);
+            $stmt = $pdo->prepare("
+                UPDATE projects
+                SET title = ?, slug = ?, category_id = ?, category = ?,
+                    short_description = ?, description = ?,
+                    role = ?, process = ?, result = ?, tools = ?,
+                    thumbnail = ?, project_url = ?, repository_url = ?,
+                    is_featured = ?, status = ?, sort_order = ?
+                WHERE id = ?
+            ");
+            $stmt->execute([
+                $title, $slug, $categoryId, $catName,
+                $shortDesc, $desc, $role, $process, $result, $tools,
+                $thumbnail, $projUrl, $repoUrl,
+                $isFeatured, $status, $sortOrder, $id
+            ]);
             set_flash('success', 'Data proyek berhasil diperbarui!');
         } catch (PDOException $e) {
             set_flash('danger', 'Gagal memperbarui proyek: ' . $e->getMessage());
         }
+
+        header('Location: projects.php');
+        exit;
     }
 
-    // DELETE PROJECT
+    // ── HAPUS PROYEK ─────────────────────────────────────────
     if ($action === 'delete') {
         $id = (int)($_POST['project_id'] ?? 0);
         if ($id > 0) {
-            $stmt = $pdo->prepare("DELETE FROM projects WHERE id = ?");
-            $stmt->execute([$id]);
+            $pdo->prepare("DELETE FROM projects WHERE id = ?")->execute([$id]);
             set_flash('success', 'Proyek berhasil dihapus.');
         }
+        header('Location: projects.php');
+        exit;
     }
-
-    header('Location: projects.php');
-    exit;
 }
 
-// Fetch All Projects
-$projects = $pdo->query("SELECT * FROM projects ORDER BY sort_order ASC, created_at DESC")->fetchAll();
+// ── Load semua proyek + nama kategori (JOIN) ──────────────
+$projects = $pdo->query("
+    SELECT p.*, pc.category_name AS cat_label, pc.slug AS cat_slug
+    FROM projects p
+    LEFT JOIN project_categories pc ON p.category_id = pc.id
+    ORDER BY p.sort_order ASC, p.created_at DESC
+")->fetchAll();
 
-$currentPage = 'projects';
-$pageTitle = 'Manage Projects';
-$pageSubtitle = 'Kelola portofolio karya, detail studi kasus, status draft/published, dan unggulan';
+// ── Load semua kategori untuk dropdown ───────────────────
+$categories = $pdo->query("
+    SELECT id, category_name FROM project_categories ORDER BY sort_order ASC, category_name ASC
+")->fetchAll();
 
 require_once __DIR__ . '/includes/admin_header.php';
 ?>
 
+<!-- ══ PAGE ACTIONS ══ -->
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h5 class="fw-bold mb-0 text-dark">Daftar Portofolio Proyek (<?= count($projects) ?>)</h5>
+        <span class="badge rounded-pill px-3 py-2"
+              style="background:var(--color-soft-olive);color:var(--color-dark);font-size:.8rem;">
+            <i class="bi bi-grid-1x2 me-1"></i> <?= count($projects) ?> Proyek
+        </span>
     </div>
     <button class="btn btn-admin-primary" data-bs-toggle="modal" data-bs-target="#addProjectModal">
         <i class="bi bi-plus-lg me-1"></i> Tambah Proyek Baru
     </button>
 </div>
 
+<!-- ══ TABLE ══ -->
 <div class="admin-card">
     <?php if (empty($projects)): ?>
-        <div class="text-center py-5 text-muted">Belum ada proyek yang ditambahkan.</div>
+        <div class="text-center py-5 text-muted">
+            <i class="bi bi-grid-1x2 fs-1 d-block mb-3 opacity-25"></i>
+            Belum ada proyek yang ditambahkan.
+        </div>
     <?php else: ?>
         <div class="table-responsive">
             <table class="table admin-table align-middle">
                 <thead>
                     <tr>
-                        <th style="width: 80px;">Thumbnail</th>
+                        <th style="width:80px;">Thumbnail</th>
                         <th>Judul & Kategori</th>
                         <th>Peran & Tools</th>
                         <th>Status</th>
@@ -128,20 +192,27 @@ require_once __DIR__ . '/includes/admin_header.php';
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach ($projects as $pj): 
+                    <?php foreach ($projects as $pj):
                         $thumbPath = resolve_img($pj['thumbnail'], 'projects', '../assets/img/placeholder.png', '../');
+                        // Label kategori: ambil dari JOIN, fallback ke kolom teks lama
+                        $catLabel  = $pj['cat_label'] ?: ($pj['category'] ?: '—');
                     ?>
                         <tr>
                             <td>
-                                <img src="<?= e($thumbPath) ?>" alt="" class="rounded-2" style="width: 70px; height: 48px; object-fit: cover;">
+                                <img src="<?= e($thumbPath) ?>" alt=""
+                                     class="rounded-2" style="width:70px;height:48px;object-fit:cover;">
                             </td>
                             <td>
                                 <div class="fw-bold text-dark"><?= e($pj['title']) ?></div>
-                                <span class="badge bg-light text-muted border" style="font-size: 0.72rem;"><?= e($pj['category']) ?></span>
+                                <span class="badge bg-light text-muted border" style="font-size:.72rem;">
+                                    <i class="bi bi-tag me-1"></i><?= e($catLabel) ?>
+                                </span>
                             </td>
                             <td>
                                 <div class="small text-dark fw-medium"><?= e($pj['role'] ?: '—') ?></div>
-                                <div class="small text-muted text-truncate" style="max-width: 220px;"><?= e($pj['tools'] ?: '—') ?></div>
+                                <div class="small text-muted text-truncate" style="max-width:220px;">
+                                    <?= e($pj['tools'] ?: '—') ?>
+                                </div>
                             </td>
                             <td>
                                 <?php if ($pj['status'] === 'published'): ?>
@@ -152,21 +223,25 @@ require_once __DIR__ . '/includes/admin_header.php';
                             </td>
                             <td>
                                 <?php if ($pj['is_featured']): ?>
-                                    <span class="badge bg-warning-subtle text-warning-emphasis fw-bold"><i class="bi bi-star-fill me-1"></i>Yes</span>
+                                    <span class="badge bg-warning-subtle text-warning-emphasis fw-bold">
+                                        <i class="bi bi-star-fill me-1"></i>Yes
+                                    </span>
                                 <?php else: ?>
                                     <span class="text-muted small">No</span>
                                 <?php endif; ?>
                             </td>
                             <td class="text-end">
-                                <button class="btn btn-outline-secondary btn-sm py-1 px-2.5 me-1"
-                                    onclick="openEditProject(<?= htmlspecialchars(json_encode($pj), ENT_QUOTES, 'UTF-8') ?>)">
+                                <button class="btn btn-outline-secondary btn-sm py-1 px-2 me-1"
+                                        onclick="openEditProject(<?= htmlspecialchars(json_encode($pj), ENT_QUOTES, 'UTF-8') ?>)"
+                                        title="Edit">
                                     <i class="bi bi-pencil"></i>
                                 </button>
-                                <form method="POST" action="projects.php" class="d-inline" onsubmit="return confirm('Hapus proyek ini secara permanen?');">
+                                <form method="POST" action="projects.php" class="d-inline"
+                                      onsubmit="return confirm('Hapus proyek ini secara permanen?');">
                                     <input type="hidden" name="csrf_token" value="<?= $csrf_token ?>">
                                     <input type="hidden" name="action" value="delete">
                                     <input type="hidden" name="project_id" value="<?= $pj['id'] ?>">
-                                    <button type="submit" class="btn btn-outline-danger btn-sm py-1 px-2.5">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm py-1 px-2" title="Hapus">
                                         <i class="bi bi-trash"></i>
                                     </button>
                                 </form>
@@ -179,7 +254,9 @@ require_once __DIR__ . '/includes/admin_header.php';
     <?php endif; ?>
 </div>
 
-<!-- Modal Add Project -->
+<!-- ══════════════════════════════════════════════════════
+     MODAL TAMBAH PROYEK
+════════════════════════════════════════════════════════ -->
 <div class="modal fade" id="addProjectModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content rounded-4 border-0">
@@ -193,37 +270,56 @@ require_once __DIR__ . '/includes/admin_header.php';
                     <input type="hidden" name="action" value="add">
 
                     <div class="row g-3">
+                        <!-- Judul -->
                         <div class="col-md-8">
                             <label class="form-label text-muted small fw-semibold">Judul Proyek *</label>
                             <input type="text" name="title" class="form-control form-folio" required>
                         </div>
+
+                        <!-- Kategori DINAMIS dari DB -->
                         <div class="col-md-4">
-                            <label class="form-label text-muted small fw-semibold">Kategori *</label>
-                            <select name="category" class="form-select form-folio" required>
-                                <option value="Business Planning">Business Planning</option>
-                                <option value="Digital Marketing">Digital Marketing</option>
-                                <option value="Website & Application">Website & Application</option>
-                                <option value="UI/UX Design">UI/UX Design</option>
-                                <option value="Research & Community Projects">Research & Community Projects</option>
-                                <option value="Other Projects">Other Projects</option>
+                            <label class="form-label text-muted small fw-semibold">
+                                Kategori *
+                                <a href="categories.php" target="_blank"
+                                   class="ms-1 text-decoration-none" style="font-size:.75rem;"
+                                   title="Kelola kategori">
+                                    <i class="bi bi-box-arrow-up-right"></i>
+                                </a>
+                            </label>
+                            <select name="category_id" class="form-select form-folio" required>
+                                <option value="">— Pilih Kategori —</option>
+                                <?php foreach ($categories as $cat): ?>
+                                    <option value="<?= $cat['id'] ?>"><?= e($cat['category_name']) ?></option>
+                                <?php endforeach; ?>
                             </select>
+                            <?php if (empty($categories)): ?>
+                                <div class="form-text text-danger">
+                                    <i class="bi bi-exclamation-circle me-1"></i>
+                                    Belum ada kategori. <a href="categories.php">Tambah kategori dulu</a>.
+                                </div>
+                            <?php endif; ?>
                         </div>
+
+                        <!-- Short Description -->
                         <div class="col-12">
-                            <label class="form-label text-muted small fw-semibold">Ringkasan Singkat (Short Description) *</label>
+                            <label class="form-label text-muted small fw-semibold">Ringkasan Singkat *</label>
                             <textarea name="short_description" rows="2" class="form-control form-folio" required></textarea>
                         </div>
+                        <!-- Deskripsi Lengkap -->
                         <div class="col-12">
-                            <label class="form-label text-muted small fw-semibold">Deskripsi Lengkap / Latar Belakang Masalah *</label>
+                            <label class="form-label text-muted small fw-semibold">Deskripsi Lengkap / Latar Belakang *</label>
                             <textarea name="description" rows="3" class="form-control form-folio" required></textarea>
                         </div>
+                        <!-- Peran & Tools -->
                         <div class="col-md-6">
                             <label class="form-label text-muted small fw-semibold">Peran / Tanggung Jawab</label>
                             <input type="text" name="role" class="form-control form-folio" placeholder="cth: Lead Business Strategist">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label text-muted small fw-semibold">Tools yang Digunakan</label>
-                            <input type="text" name="tools" class="form-control form-folio" placeholder="Figma, Meta Ads, Excel, Python">
+                            <input type="text" name="tools" class="form-control form-folio" placeholder="Figma, Meta Ads, Excel">
                         </div>
+                        <!-- Proses & Hasil -->
                         <div class="col-md-6">
                             <label class="form-label text-muted small fw-semibold">Proses Pengerjaan</label>
                             <textarea name="process" rows="2" class="form-control form-folio"></textarea>
@@ -232,6 +328,7 @@ require_once __DIR__ . '/includes/admin_header.php';
                             <label class="form-label text-muted small fw-semibold">Hasil & Dampak</label>
                             <textarea name="result" rows="2" class="form-control form-folio"></textarea>
                         </div>
+                        <!-- URL -->
                         <div class="col-md-6">
                             <label class="form-label text-muted small fw-semibold">Tautan Proyek / Demo</label>
                             <input type="text" name="project_url" class="form-control form-folio" placeholder="https://...">
@@ -240,10 +337,12 @@ require_once __DIR__ . '/includes/admin_header.php';
                             <label class="form-label text-muted small fw-semibold">Tautan Repositori / File</label>
                             <input type="text" name="repository_url" class="form-control form-folio" placeholder="https://github.com/...">
                         </div>
+                        <!-- Thumbnail -->
                         <div class="col-md-6">
                             <label class="form-label text-muted small fw-semibold">Unggah Thumbnail</label>
                             <input type="file" name="thumbnail_file" class="form-control form-folio" accept="image/*">
                         </div>
+                        <!-- Status & Urutan -->
                         <div class="col-md-3">
                             <label class="form-label text-muted small fw-semibold">Status *</label>
                             <select name="status" class="form-select form-folio">
@@ -255,8 +354,9 @@ require_once __DIR__ . '/includes/admin_header.php';
                             <label class="form-label text-muted small fw-semibold">Urutan (Sort Order)</label>
                             <input type="number" name="sort_order" class="form-control form-folio" value="0">
                         </div>
+                        <!-- Featured -->
                         <div class="col-12">
-                            <div class="form-check mt-2">
+                            <div class="form-check mt-1">
                                 <input class="form-check-input" type="checkbox" name="is_featured" id="addFeatured" value="1">
                                 <label class="form-check-label text-dark fw-medium" for="addFeatured">
                                     Tandai sebagai Proyek Unggulan (Featured)
@@ -274,7 +374,9 @@ require_once __DIR__ . '/includes/admin_header.php';
     </div>
 </div>
 
-<!-- Modal Edit Project -->
+<!-- ══════════════════════════════════════════════════════
+     MODAL EDIT PROYEK
+════════════════════════════════════════════════════════ -->
 <div class="modal fade" id="editProjectModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content rounded-4 border-0">
@@ -290,29 +392,41 @@ require_once __DIR__ . '/includes/admin_header.php';
                     <input type="hidden" name="current_thumbnail" id="editCurrentThumb">
 
                     <div class="row g-3">
+                        <!-- Judul -->
                         <div class="col-md-8">
                             <label class="form-label text-muted small fw-semibold">Judul Proyek *</label>
                             <input type="text" name="title" id="editTitle" class="form-control form-folio" required>
                         </div>
+
+                        <!-- Kategori DINAMIS dari DB -->
                         <div class="col-md-4">
-                            <label class="form-label text-muted small fw-semibold">Kategori *</label>
-                            <select name="category" id="editCategory" class="form-select form-folio" required>
-                                <option value="Business Planning">Business Planning</option>
-                                <option value="Digital Marketing">Digital Marketing</option>
-                                <option value="Website & Application">Website & Application</option>
-                                <option value="UI/UX Design">UI/UX Design</option>
-                                <option value="Research & Community Projects">Research & Community Projects</option>
-                                <option value="Other Projects">Other Projects</option>
+                            <label class="form-label text-muted small fw-semibold">
+                                Kategori *
+                                <a href="categories.php" target="_blank"
+                                   class="ms-1 text-decoration-none" style="font-size:.75rem;"
+                                   title="Kelola kategori">
+                                    <i class="bi bi-box-arrow-up-right"></i>
+                                </a>
+                            </label>
+                            <select name="category_id" id="editCategoryId" class="form-select form-folio" required>
+                                <option value="">— Pilih Kategori —</option>
+                                <?php foreach ($categories as $cat): ?>
+                                    <option value="<?= $cat['id'] ?>"><?= e($cat['category_name']) ?></option>
+                                <?php endforeach; ?>
                             </select>
                         </div>
+
+                        <!-- Short Description -->
                         <div class="col-12">
                             <label class="form-label text-muted small fw-semibold">Ringkasan Singkat *</label>
                             <textarea name="short_description" id="editShortDesc" rows="2" class="form-control form-folio" required></textarea>
                         </div>
+                        <!-- Deskripsi Lengkap -->
                         <div class="col-12">
                             <label class="form-label text-muted small fw-semibold">Deskripsi Lengkap *</label>
                             <textarea name="description" id="editDesc" rows="3" class="form-control form-folio" required></textarea>
                         </div>
+                        <!-- Peran & Tools -->
                         <div class="col-md-6">
                             <label class="form-label text-muted small fw-semibold">Peran / Tanggung Jawab</label>
                             <input type="text" name="role" id="editRole" class="form-control form-folio">
@@ -321,6 +435,7 @@ require_once __DIR__ . '/includes/admin_header.php';
                             <label class="form-label text-muted small fw-semibold">Tools yang Digunakan</label>
                             <input type="text" name="tools" id="editTools" class="form-control form-folio">
                         </div>
+                        <!-- Proses & Hasil -->
                         <div class="col-md-6">
                             <label class="form-label text-muted small fw-semibold">Proses Pengerjaan</label>
                             <textarea name="process" id="editProcess" rows="2" class="form-control form-folio"></textarea>
@@ -329,6 +444,7 @@ require_once __DIR__ . '/includes/admin_header.php';
                             <label class="form-label text-muted small fw-semibold">Hasil & Dampak</label>
                             <textarea name="result" id="editResult" rows="2" class="form-control form-folio"></textarea>
                         </div>
+                        <!-- URL -->
                         <div class="col-md-6">
                             <label class="form-label text-muted small fw-semibold">Tautan Proyek / Demo</label>
                             <input type="text" name="project_url" id="editProjUrl" class="form-control form-folio">
@@ -337,10 +453,13 @@ require_once __DIR__ . '/includes/admin_header.php';
                             <label class="form-label text-muted small fw-semibold">Tautan Repositori</label>
                             <input type="text" name="repository_url" id="editRepoUrl" class="form-control form-folio">
                         </div>
+                        <!-- Thumbnail -->
                         <div class="col-md-6">
                             <label class="form-label text-muted small fw-semibold">Ganti Thumbnail</label>
                             <input type="file" name="thumbnail_file" class="form-control form-folio" accept="image/*">
+                            <div class="form-text text-muted" id="editThumbInfo"></div>
                         </div>
+                        <!-- Status & Urutan -->
                         <div class="col-md-3">
                             <label class="form-label text-muted small fw-semibold">Status *</label>
                             <select name="status" id="editStatus" class="form-select form-folio">
@@ -352,8 +471,9 @@ require_once __DIR__ . '/includes/admin_header.php';
                             <label class="form-label text-muted small fw-semibold">Urutan</label>
                             <input type="number" name="sort_order" id="editSortOrder" class="form-control form-folio">
                         </div>
+                        <!-- Featured -->
                         <div class="col-12">
-                            <div class="form-check mt-2">
+                            <div class="form-check mt-1">
                                 <input class="form-check-input" type="checkbox" name="is_featured" id="editFeatured" value="1">
                                 <label class="form-check-label text-dark fw-medium" for="editFeatured">
                                     Tandai sebagai Proyek Unggulan (Featured)
@@ -371,28 +491,56 @@ require_once __DIR__ . '/includes/admin_header.php';
     </div>
 </div>
 
+<!-- ══ Scripts ══ -->
 <script>
 function openEditProject(p) {
-    document.getElementById('editProjId').value = p.id;
-    document.getElementById('editTitle').value = p.title;
-    document.getElementById('editCategory').value = p.category;
-    document.getElementById('editShortDesc').value = p.short_description;
-    document.getElementById('editDesc').value = p.description;
-    document.getElementById('editRole').value = p.role || '';
-    document.getElementById('editTools').value = p.tools || '';
-    document.getElementById('editProcess').value = p.process || '';
-    document.getElementById('editResult').value = p.result || '';
-    document.getElementById('editProjUrl').value = p.project_url || '';
-    document.getElementById('editRepoUrl').value = p.repository_url || '';
-    document.getElementById('editCurrentThumb').value = p.thumbnail || 'placeholder.png';
-    document.getElementById('editStatus').value = p.status;
-    document.getElementById('editSortOrder').value = p.sort_order;
-    document.getElementById('editFeatured').checked = (parseInt(p.is_featured) === 1);
+    document.getElementById('editProjId').value         = p.id;
+    document.getElementById('editTitle').value          = p.title || '';
+    document.getElementById('editShortDesc').value      = p.short_description || '';
+    document.getElementById('editDesc').value           = p.description || '';
+    document.getElementById('editRole').value           = p.role || '';
+    document.getElementById('editTools').value          = p.tools || '';
+    document.getElementById('editProcess').value        = p.process || '';
+    document.getElementById('editResult').value         = p.result || '';
+    document.getElementById('editProjUrl').value        = p.project_url || '';
+    document.getElementById('editRepoUrl').value        = p.repository_url || '';
+    document.getElementById('editCurrentThumb').value   = p.thumbnail || 'placeholder.png';
+    document.getElementById('editStatus').value         = p.status || 'published';
+    document.getElementById('editSortOrder').value      = p.sort_order || 0;
+    document.getElementById('editFeatured').checked     = (parseInt(p.is_featured) === 1);
+
+    // Set info thumbnail lama
+    const thumbInfo = document.getElementById('editThumbInfo');
+    if (p.thumbnail && p.thumbnail !== 'placeholder.png') {
+        thumbInfo.textContent = 'Thumbnail saat ini: ' + p.thumbnail;
+    } else {
+        thumbInfo.textContent = '';
+    }
+
+    // Set dropdown kategori berdasarkan category_id (FK)
+    const sel = document.getElementById('editCategoryId');
+    const catId = p.category_id ? p.category_id.toString() : '';
+    // Coba set by category_id
+    let matched = false;
+    for (let opt of sel.options) {
+        if (opt.value === catId) {
+            sel.value = catId;
+            matched = true;
+            break;
+        }
+    }
+    // Fallback: cari by teks (untuk data lama yang belum punya category_id)
+    if (!matched && p.category) {
+        for (let opt of sel.options) {
+            if (opt.text.trim().toLowerCase() === p.category.trim().toLowerCase()) {
+                sel.value = opt.value;
+                break;
+            }
+        }
+    }
 
     new bootstrap.Modal(document.getElementById('editProjectModal')).show();
 }
 </script>
 
-<?php
-require_once __DIR__ . '/includes/admin_footer.php';
-?>
+<?php require_once __DIR__ . '/includes/admin_footer.php'; ?>

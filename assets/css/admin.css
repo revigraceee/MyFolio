@@ -28,45 +28,137 @@ h1, h2, h3, h4, h5, h6 {
     color: var(--color-dark);
 }
 
-/* Sidebar */
+/* ── Sidebar ── */
 .admin-sidebar {
     background-color: var(--color-sidebar);
     color: #E2E4DC;
     min-height: 100vh;
-    width: 260px;
+    width: 256px;
     flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.08) transparent;
 }
 
 .admin-brand {
     font-family: 'Plus Jakarta Sans', sans-serif;
     font-weight: 800;
-    font-size: 1.25rem;
+    font-size: 1.2rem;
     color: #FFFFFF;
+    letter-spacing: -0.3px;
 }
 
+/* Nav group label */
+.nav-group-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: rgba(186, 194, 174, 0.45);
+    padding: 0 16px;
+    margin: 16px 0 6px;
+    display: block;
+}
+
+/* Nav links */
 .admin-nav-link {
     color: #BAC2AE;
-    padding: 10px 16px;
+    padding: 9px 14px;
     border-radius: var(--radius-button);
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     font-weight: 500;
-    font-size: 0.92rem;
+    font-size: 0.875rem;
     text-decoration: none;
-    margin-bottom: 4px;
-    transition: all 0.2s ease;
+    margin-bottom: 2px;
+    transition: background 0.18s ease, color 0.18s ease;
+    white-space: nowrap;
+}
+
+.admin-nav-link i {
+    font-size: 1rem;
+    flex-shrink: 0;
+    opacity: 0.75;
+    transition: opacity 0.18s ease;
 }
 
 .admin-nav-link:hover {
-    background-color: rgba(255, 255, 255, 0.08);
+    background-color: rgba(255, 255, 255, 0.07);
     color: #FFFFFF;
 }
+
+.admin-nav-link:hover i { opacity: 1; }
 
 .admin-nav-link.active {
     background-color: var(--color-primary);
     color: #FFFFFF;
     font-weight: 600;
+}
+
+.admin-nav-link.active i { opacity: 1; }
+
+/* Sub-items (indented inside a group) */
+.admin-nav-link.sub {
+    padding-left: 20px;
+    font-size: 0.845rem;
+}
+
+/* ── Collapsible Group Toggle Button ── */
+.nav-group-toggle {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 9px 14px;
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-button);
+    color: rgba(186, 194, 174, 0.75);
+    font-size: 0.875rem;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    margin-bottom: 2px;
+    transition: background 0.18s ease, color 0.18s ease;
+}
+
+.nav-group-toggle:hover {
+    background: rgba(255, 255, 255, 0.07);
+    color: #FFFFFF;
+}
+
+.nav-group-toggle.open {
+    color: #FFFFFF;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* Chevron icon — rotates when open */
+.toggle-chevron {
+    font-size: 0.7rem;
+    opacity: 0.6;
+    transition: transform 0.22s ease;
+    flex-shrink: 0;
+}
+
+.nav-group-toggle.open .toggle-chevron {
+    transform: rotate(90deg);
+    opacity: 1;
+}
+
+/* Group body (collapse wrapper) */
+.nav-group-body {
+    padding-left: 6px;
+    overflow: hidden;
+}
+
+/* Sidebar divider */
+.sidebar-divider {
+    border: none;
+    border-top: 1px solid rgba(255,255,255,0.07);
+    margin: 10px 0;
 }
 
 /* Header */
@@ -158,5 +250,31 @@ h1, h2, h3, h4, h5, h6 {
 .btn-admin-primary:hover {
     background-color: var(--color-primary-hover);
     color: #fff;
+}
+
+/* Nav Pills Custom Theme */
+.nav-pills .nav-link {
+    color: var(--color-muted);
+    font-weight: 600;
+    font-size: 0.88rem;
+    border-radius: var(--radius-button);
+    padding: 8px 18px;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+.nav-pills .nav-link:hover {
+    color: var(--color-dark);
+    background-color: rgba(92, 111, 43, 0.08);
+}
+
+.nav-pills .nav-link.active {
+    background-color: var(--color-primary);
+    color: #ffffff;
+}
+
+.nav-pills .nav-link.active .badge {
+    background-color: rgba(255, 255, 255, 0.25) !important;
+    color: #ffffff !important;
 }
 

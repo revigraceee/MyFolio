@@ -7,6 +7,23 @@ $flash = get_flash();
 
 // Unread messages count for sidebar badge
 $unreadCount = (int)$pdo->query("SELECT COUNT(*) FROM messages WHERE is_read = 0")->fetchColumn();
+
+// Mapping: group → pages yang termasuk di dalamnya
+$navGroups = [
+    'portofolio'  => ['projects', 'categories', 'skills'],
+    'profil'      => ['profile', 'experiences', 'education', 'social-links'],
+    'komunikasi'  => ['messages'],
+    'sistem'      => ['settings'],
+];
+
+// Tentukan grup mana yang aktif (auto-expand)
+$activeGroup = '';
+foreach ($navGroups as $group => $pages) {
+    if (in_array($currentPage, $pages)) {
+        $activeGroup = $group;
+        break;
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -28,74 +45,153 @@ $unreadCount = (int)$pdo->query("SELECT COUNT(*) FROM messages WHERE is_read = 0
 <body>
 
 <div class="d-flex">
-    <!-- SIDEBAR (Section 5.2) -->
-    <aside class="admin-sidebar d-flex flex-column p-3">
-        <div class="d-flex align-items-center gap-2 mb-4 px-2 pt-2">
-            <span class="p-2 rounded-3 bg-primary-olive text-white"><i class="bi bi-person-workspace fs-5"></i></span>
+    <!-- SIDEBAR -->
+    <aside class="admin-sidebar p-3">
+
+        <!-- ── Brand ── -->
+        <div class="d-flex align-items-center gap-2 px-2 pt-2 pb-3">
+            <span style="width:38px;height:38px;border-radius:10px;background:var(--color-primary);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <i class="bi bi-person-workspace text-white" style="font-size:1.1rem;"></i>
+            </span>
             <div>
-                <span class="admin-brand tracking-tight">My<span style="color: #BAC2AE;">Folio</span></span>
-                <div class="text-muted" style="font-size: 0.72rem;">CMS Admin Panel v2.0</div>
+                <div class="admin-brand">My<span style="color:#8A9A5B;">Folio</span></div>
+                <div style="font-size:0.65rem;color:rgba(186,194,174,0.5);letter-spacing:.3px;">CMS Admin Panel v2.0</div>
             </div>
         </div>
 
-        <div class="px-2 mb-3 text-muted small">
-            Admin: <strong class="text-light"><?= e($_SESSION['admin_username'] ?? 'admin') ?></strong>
+        <!-- ── Admin Info ── -->
+        <div style="margin:0 4px 10px;padding:10px 12px;background:rgba(255,255,255,0.05);border-radius:10px;border:1px solid rgba(255,255,255,0.06);">
+            <div style="font-size:0.68rem;color:rgba(186,194,174,0.45);margin-bottom:4px;letter-spacing:.3px;">LOGGED IN AS</div>
+            <div class="d-flex align-items-center gap-2">
+                <span style="width:28px;height:28px;border-radius:50%;background:var(--color-primary);display:flex;align-items:center;justify-content:center;font-size:.8rem;color:#fff;font-weight:700;flex-shrink:0;">
+                    <?= strtoupper(substr($_SESSION['admin_username'] ?? 'A', 0, 1)) ?>
+                </span>
+                <span style="font-size:.875rem;font-weight:600;color:#E2E4DC;"><?= e($_SESSION['admin_username'] ?? 'admin') ?></span>
+            </div>
         </div>
 
-        <nav class="nav flex-column mb-auto">
+        <!-- ══════════════════════════════════════
+             NAVIGATION — Collapsible Groups
+        ══════════════════════════════════════ -->
+        <nav class="nav flex-column flex-grow-1">
+
+            <!-- ── MAIN (selalu tampil, tidak collapsible) ── -->
             <a href="dashboard.php" class="admin-nav-link <?= $currentPage === 'dashboard' ? 'active' : '' ?>">
                 <i class="bi bi-speedometer2"></i>
                 <span>Dashboard</span>
             </a>
-            <a href="profile.php" class="admin-nav-link <?= $currentPage === 'profile' ? 'active' : '' ?>">
-                <i class="bi bi-person-badge"></i>
-                <span>Manage Profile</span>
-            </a>
-            <a href="projects.php" class="admin-nav-link <?= $currentPage === 'projects' ? 'active' : '' ?>">
-                <i class="bi bi-grid-1x2"></i>
-                <span>Manage Projects</span>
-            </a>
-            <a href="experiences.php" class="admin-nav-link <?= $currentPage === 'experiences' ? 'active' : '' ?>">
-                <i class="bi bi-briefcase"></i>
-                <span>Manage Experience</span>
-            </a>
-            <a href="education.php" class="admin-nav-link <?= $currentPage === 'education' ? 'active' : '' ?>">
-                <i class="bi bi-mortarboard"></i>
-                <span>Manage Education</span>
-            </a>
-            <a href="skills.php" class="admin-nav-link <?= $currentPage === 'skills' ? 'active' : '' ?>">
-                <i class="bi bi-tools"></i>
-                <span>Manage Skills</span>
-            </a>
-            <a href="messages.php" class="admin-nav-link <?= $currentPage === 'messages' ? 'active' : '' ?>">
-                <i class="bi bi-inbox"></i>
-                <span>Messages / Inbox</span>
-                <?php if ($unreadCount > 0): ?>
-                    <span class="badge bg-danger rounded-pill ms-auto"><?= $unreadCount ?></span>
-                <?php endif; ?>
-            </a>
-            <a href="social-links.php" class="admin-nav-link <?= $currentPage === 'social-links' ? 'active' : '' ?>">
-                <i class="bi bi-share"></i>
-                <span>Social Links</span>
-            </a>
-            <a href="settings.php" class="admin-nav-link <?= $currentPage === 'settings' ? 'active' : '' ?>">
-                <i class="bi bi-gear"></i>
-                <span>Settings</span>
-            </a>
+
+            <div style="height:6px;"></div>
+
+            <!-- ── GROUP: PORTOFOLIO ── -->
+            <?php $isOpen = $activeGroup === 'portofolio'; ?>
+            <button class="nav-group-toggle <?= $isOpen ? 'open' : 'collapsed' ?>"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#grpPortofolio"
+                    aria-expanded="<?= $isOpen ? 'true' : 'false' ?>">
+                <span class="d-flex align-items-center gap-2">
+                    <i class="bi bi-collection"></i>
+                    <span>Portofolio</span>
+                </span>
+                <i class="bi bi-chevron-right toggle-chevron"></i>
+            </button>
+            <div class="collapse nav-group-body <?= $isOpen ? 'show' : '' ?>" id="grpPortofolio">
+                <a href="projects.php" class="admin-nav-link sub <?= $currentPage === 'projects' ? 'active' : '' ?>">
+                    <i class="bi bi-grid-1x2"></i><span>Proyek</span>
+                </a>
+                <a href="categories.php" class="admin-nav-link sub <?= $currentPage === 'categories' ? 'active' : '' ?>">
+                    <i class="bi bi-tags"></i><span>Kategori Proyek</span>
+                </a>
+                <a href="skills.php" class="admin-nav-link sub <?= $currentPage === 'skills' ? 'active' : '' ?>">
+                    <i class="bi bi-stars"></i><span>Keahlian (Skills)</span>
+                </a>
+            </div>
+
+            <!-- ── GROUP: PROFIL ── -->
+            <?php $isOpen = $activeGroup === 'profil'; ?>
+            <button class="nav-group-toggle <?= $isOpen ? 'open' : 'collapsed' ?>"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#grpProfil"
+                    aria-expanded="<?= $isOpen ? 'true' : 'false' ?>">
+                <span class="d-flex align-items-center gap-2">
+                    <i class="bi bi-person-lines-fill"></i>
+                    <span>Profil</span>
+                </span>
+                <i class="bi bi-chevron-right toggle-chevron"></i>
+            </button>
+            <div class="collapse nav-group-body <?= $isOpen ? 'show' : '' ?>" id="grpProfil">
+                <a href="profile.php" class="admin-nav-link sub <?= $currentPage === 'profile' ? 'active' : '' ?>">
+                    <i class="bi bi-person-badge"></i><span>Data Pribadi</span>
+                </a>
+                <a href="experiences.php" class="admin-nav-link sub <?= $currentPage === 'experiences' ? 'active' : '' ?>">
+                    <i class="bi bi-briefcase"></i><span>Pengalaman Kerja</span>
+                </a>
+                <a href="education.php" class="admin-nav-link sub <?= $currentPage === 'education' ? 'active' : '' ?>">
+                    <i class="bi bi-mortarboard"></i><span>Pendidikan</span>
+                </a>
+                <a href="social-links.php" class="admin-nav-link sub <?= $currentPage === 'social-links' ? 'active' : '' ?>">
+                    <i class="bi bi-link-45deg"></i><span>Social Links</span>
+                </a>
+            </div>
+
+            <!-- ── GROUP: KOMUNIKASI ── -->
+            <?php $isOpen = $activeGroup === 'komunikasi'; ?>
+            <button class="nav-group-toggle <?= $isOpen ? 'open' : 'collapsed' ?>"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#grpKomunikasi"
+                    aria-expanded="<?= $isOpen ? 'true' : 'false' ?>">
+                <span class="d-flex align-items-center gap-2">
+                    <i class="bi bi-chat-dots"></i>
+                    <span>Komunikasi</span>
+                </span>
+                <span class="d-flex align-items-center gap-1">
+                    <?php if ($unreadCount > 0): ?>
+                        <span class="badge bg-danger rounded-pill" style="font-size:.6rem;padding:3px 6px;"><?= $unreadCount ?></span>
+                    <?php endif; ?>
+                    <i class="bi bi-chevron-right toggle-chevron"></i>
+                </span>
+            </button>
+            <div class="collapse nav-group-body <?= $isOpen ? 'show' : '' ?>" id="grpKomunikasi">
+                <a href="messages.php" class="admin-nav-link sub <?= $currentPage === 'messages' ? 'active' : '' ?>">
+                    <i class="bi bi-envelope"></i>
+                    <span>Pesan Masuk</span>
+                    <?php if ($unreadCount > 0): ?>
+                        <span class="badge bg-danger rounded-pill ms-auto" style="font-size:.6rem;"><?= $unreadCount ?></span>
+                    <?php endif; ?>
+                </a>
+            </div>
+
+            <!-- ── GROUP: SISTEM ── -->
+            <?php $isOpen = $activeGroup === 'sistem'; ?>
+            <button class="nav-group-toggle <?= $isOpen ? 'open' : 'collapsed' ?>"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#grpSistem"
+                    aria-expanded="<?= $isOpen ? 'true' : 'false' ?>">
+                <span class="d-flex align-items-center gap-2">
+                    <i class="bi bi-sliders"></i>
+                    <span>Sistem</span>
+                </span>
+                <i class="bi bi-chevron-right toggle-chevron"></i>
+            </button>
+            <div class="collapse nav-group-body <?= $isOpen ? 'show' : '' ?>" id="grpSistem">
+                <a href="settings.php" class="admin-nav-link sub <?= $currentPage === 'settings' ? 'active' : '' ?>">
+                    <i class="bi bi-gear"></i><span>Pengaturan</span>
+                </a>
+            </div>
+
         </nav>
 
-        <hr class="border-secondary my-3 opacity-25">
-
-        <div class="d-flex flex-column gap-2">
-            <a href="../index.php" target="_blank" class="btn btn-outline-light btn-sm w-100 d-flex align-items-center justify-content-center gap-2">
-                <i class="bi bi-arrow-up-right-square"></i>
-                <span>Lihat Portofolio</span>
+        <!-- ── Footer Actions ── -->
+        <hr class="sidebar-divider mt-3 mb-2">
+        <div class="d-flex flex-column gap-1 pb-1">
+            <a href="../index.php" target="_blank" class="admin-nav-link" style="color:rgba(186,194,174,0.65);font-size:.82rem;">
+                <i class="bi bi-box-arrow-up-right"></i><span>Lihat Portofolio</span>
             </a>
-            <a href="logout.php" class="btn btn-danger btn-sm w-100 d-flex align-items-center justify-content-center gap-2">
-                <i class="bi bi-box-arrow-right"></i>
-                <span>Logout</span>
+            <a href="logout.php" class="admin-nav-link" style="color:#F87171;font-size:.82rem;">
+                <i class="bi bi-power"></i><span>Keluar</span>
             </a>
         </div>
+
     </aside>
 
     <!-- MAIN BODY -->

@@ -7,7 +7,9 @@ DROP TABLE IF EXISTS `social_links`;
 DROP TABLE IF EXISTS `education`;
 DROP TABLE IF EXISTS `experiences`;
 DROP TABLE IF EXISTS `projects`;
+DROP TABLE IF EXISTS `project_categories`;
 DROP TABLE IF EXISTS `skills`;
+DROP TABLE IF EXISTS `skill_categories`;
 DROP TABLE IF EXISTS `messages`;
 DROP TABLE IF EXISTS `profile`;
 DROP TABLE IF EXISTS `admins`;
@@ -35,10 +37,22 @@ CREATE TABLE `profile` (
   `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 3. Table projects
+-- 3. Table project_categories
+CREATE TABLE `project_categories` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `category_name` VARCHAR(100) NOT NULL,
+  `slug` VARCHAR(100) NOT NULL,
+  `sort_order` TINYINT UNSIGNED NOT NULL DEFAULT 0,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_slug` (`slug`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 4. Table projects
 CREATE TABLE `projects` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `title` VARCHAR(150) NOT NULL,
+  `category_id` INT UNSIGNED DEFAULT NULL,
   `slug` VARCHAR(180) UNIQUE NOT NULL,
   `category` VARCHAR(80) NOT NULL,
   `short_description` VARCHAR(255) NOT NULL,
@@ -52,6 +66,29 @@ CREATE TABLE `projects` (
   `repository_url` VARCHAR(255) DEFAULT NULL,
   `is_featured` TINYINT(1) DEFAULT 0,
   `status` ENUM('draft', 'published') DEFAULT 'published',
+  `sort_order` INT DEFAULT 0,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT `fk_projects_category` FOREIGN KEY (`category_id`) REFERENCES `project_categories` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 5. Table skill_categories
+CREATE TABLE `skill_categories` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `category_name` VARCHAR(100) NOT NULL,
+  `sort_order` TINYINT UNSIGNED NOT NULL DEFAULT 0,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_name` (`category_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 6. Table skills
+CREATE TABLE `skills` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `skill_name` VARCHAR(100) NOT NULL,
+  `category` VARCHAR(80) NOT NULL,
+  `proficiency` VARCHAR(30) DEFAULT NULL,
+  `description` VARCHAR(255) DEFAULT NULL,
   `sort_order` INT DEFAULT 0,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -142,11 +179,25 @@ VALUES (
   '#'
 );
 
+-- Project Categories Master Data
+INSERT INTO `project_categories` (`id`, `category_name`, `slug`, `sort_order`)
+VALUES
+(1, 'Web Development', 'web-development', 1),
+(2, 'Mobile App', 'mobile-app', 2),
+(3, 'UI/UX Design', 'ui-ux-design', 3),
+(4, 'Data & AI', 'data-ai', 4),
+(5, 'Lainnya', 'lainnya', 5),
+(6, 'Business Planning', 'business-planning', 6),
+(7, 'Digital Marketing', 'digital-marketing', 7),
+(8, 'Research & Community Projects', 'research-community-projects', 8),
+(9, 'Website & Application', 'website-application', 9);
+
 -- Projects
-INSERT INTO `projects` (`title`, `slug`, `category`, `short_description`, `description`, `role`, `process`, `result`, `tools`, `thumbnail`, `project_url`, `repository_url`, `is_featured`, `status`, `sort_order`)
+INSERT INTO `projects` (`title`, `category_id`, `slug`, `category`, `short_description`, `description`, `role`, `process`, `result`, `tools`, `thumbnail`, `project_url`, `repository_url`, `is_featured`, `status`, `sort_order`)
 VALUES
 (
   'EcoBite - Smart Food Waste Marketplace Business Plan',
+  6,
   'ecobite-smart-food-waste-marketplace',
   'Business Planning',
   'Rencana bisnis platform marketplace B2B dan B2C untuk mengoptimalkan surplus makanan dari hotel dan resto dengan model penetapan harga dinamis.',
@@ -164,6 +215,7 @@ VALUES
 ),
 (
   'Campaign Go-Digital: Optimalisasi Omzet UMKM Kopi Kenangan Nusantara',
+  7,
   'campaign-go-digital-umkm-kopi',
   'Digital Marketing',
   'Strategi pemasaran digital terintegrasi melalui Meta Ads, optimasi TikTok Shop, dan kolaborasi micro-influencer lokal.',
@@ -181,6 +233,7 @@ VALUES
 ),
 (
   'AgriHub - Redesain UI/UX Platform Lelang Hasil Tani Digital',
+  3,
   'agrihub-redesain-ui-ux-platform-lelang-tani',
   'UI/UX Design',
   'Perancangan antarmuka aplikasi mobile yang intuitif bagi kelompok tani untuk mengikuti lelang hasil panen langsung ke distributor kota.',
@@ -198,6 +251,7 @@ VALUES
 ),
 (
   'Riset Valuasi Pasar & Perilaku Konsumen Gen-Z pada Quick Commerce',
+  8,
   'riset-pasar-quick-commerce-gen-z',
   'Research & Community Projects',
   'Laporan riset pasar komprehensif mengenai frekuensi pembelian impulsif dan loyalitas pelanggan aplikasi Quick Commerce di area Jabodetabek.',
@@ -215,6 +269,7 @@ VALUES
 ),
 (
   'KaryaKita - Portal Portofolio Kreatif Mahasiswa Vokasi',
+  9,
   'karyakita-portal-portofolio-mahasiswa',
   'Website & Application',
   'Prototipe web showcase karya tugas akhir mahasiswa desain dan multimedia yang terhubung langsung dengan talent recruiter industri kreatif.',
@@ -313,6 +368,15 @@ VALUES
   'Lulus dengan predikat nilai akademik sangat memuaskan. Menjabat sebagai Koordinator Mading Sekolah dan Juara Lomba Debat Ekonomi Pelajar.',
   2
 );
+
+-- Skill Categories Master Data
+INSERT INTO `skill_categories` (`id`, `category_name`, `sort_order`)
+VALUES
+(1, 'Digital Tools', 1),
+(2, 'Business & Entrepreneurship', 2),
+(3, 'Administration & Data', 3),
+(4, 'Communication', 4),
+(5, 'Personal / Soft Skills', 5);
 
 -- Skills (Menggunakan label proficiency terukur: Beginner, Intermediate, Advanced)
 INSERT INTO `skills` (`skill_name`, `category`, `proficiency`, `description`, `sort_order`)

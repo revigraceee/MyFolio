@@ -61,13 +61,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 $profile = $pdo->query("SELECT * FROM profile LIMIT 1")->fetch() ?: [];
 
 // 2. Fetch Projects (Only Published, ordered by is_featured DESC, sort_order ASC, created_at DESC)
-$projects = $pdo->query("SELECT * FROM projects WHERE status = 'published' ORDER BY is_featured DESC, sort_order ASC, created_at DESC")->fetchAll();
+$projects = $pdo->query("
+    SELECT p.*, COALESCE(pc.category_name, p.category) AS display_category
+    FROM projects p
+    LEFT JOIN project_categories pc ON p.category_id = pc.id
+    WHERE p.status = 'published'
+    ORDER BY p.is_featured DESC, p.sort_order ASC, p.created_at DESC
+")->fetchAll();
 
 // Extract unique categories for filter pills
 $categories = [];
 foreach ($projects as $pj) {
-    if (!empty($pj['category']) && !in_array($pj['category'], $categories)) {
-        $categories[] = $pj['category'];
+    $cat = $pj['display_category'] ?: 'Lainnya';
+    if (!empty($cat) && !in_array($cat, $categories)) {
+        $categories[] = $cat;
     }
 }
 
@@ -77,11 +84,16 @@ $experiences = $pdo->query("SELECT * FROM experiences ORDER BY sort_order ASC, p
 // 4. Fetch Education (ordered by sort_order ASC, period_start DESC)
 $educations = $pdo->query("SELECT * FROM education ORDER BY sort_order ASC, period_start DESC")->fetchAll();
 
-// 5. Fetch Skills (ordered by category ASC, sort_order ASC)
-$skills = $pdo->query("SELECT * FROM skills ORDER BY category ASC, sort_order ASC")->fetchAll();
+// 5. Fetch Skills (ordered by category sort_order ASC, skills.sort_order ASC)
+$skills = $pdo->query("
+    SELECT s.*
+    FROM skills s
+    LEFT JOIN skill_categories sc ON sc.category_name = s.category
+    ORDER BY COALESCE(sc.sort_order, 999) ASC, s.sort_order ASC, s.id ASC
+")->fetchAll();
 $groupedSkills = [];
 foreach ($skills as $sk) {
-    $cat = $sk['category'];
+    $cat = $sk['category'] ?: 'Lainnya';
     if (!isset($groupedSkills[$cat])) {
         $groupedSkills[$cat] = [];
     }
@@ -250,12 +262,13 @@ require_once __DIR__ . '/includes/navbar.php';
             <?php else: ?>
                 <?php foreach ($projects as $pj): 
                     $thumbUrl = resolve_img($pj['thumbnail'], 'projects', 'assets/img/placeholder.png');
+                    $catDisplay = $pj['display_category'] ?: ($pj['category'] ?: 'Lainnya');
                 ?>
-                    <div class="col-md-6 col-lg-4 project-item" data-category="<?= e($pj['category']) ?>">
+                    <div class="col-md-6 col-lg-4 project-item" data-category="<?= e($catDisplay) ?>">
                         <div class="project-card">
                             <div class="project-thumb-box">
                                 <img src="<?= $thumbUrl ?>" alt="<?= e($pj['title']) ?>" loading="lazy">
-                                <span class="project-cat-pill"><?= e($pj['category']) ?></span>
+                                <span class="project-cat-pill"><?= e($catDisplay) ?></span>
                                 <?php if (!empty($pj['is_featured'])): ?>
                                     <span class="project-featured-pill">
                                         <i class="bi bi-star-fill me-1"></i> Featured
@@ -618,7 +631,7 @@ require_once __DIR__ . '/includes/navbar.php';
 <script>
 function openProjectModal(project, thumbUrl) {
     document.getElementById('mProjTitle').innerText = project.title;
-    document.getElementById('mProjCategory').innerText = project.category;
+    document.getElementById('mProjCategory').innerText = project.display_category || project.category;
     document.getElementById('mProjThumb').src = thumbUrl;
     document.getElementById('mProjRole').innerText = project.role || '—';
     document.getElementById('mProjTools').innerText = project.tools || '—';
