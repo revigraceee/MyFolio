@@ -553,26 +553,41 @@ require_once __DIR__ . '/includes/admin_header.php';
 <!-- ══ Scripts ══ -->
 <script>
 // ── Tombol Tambah kontekstual per tab ──
-document.getElementById('tab-skills-btn').addEventListener('click', function() {
-    document.getElementById('btn-skills-action').style.display = '';
-    document.getElementById('btn-kategori-action').style.display = 'none';
-});
-document.getElementById('tab-kategori-btn').addEventListener('click', function() {
-    document.getElementById('btn-skills-action').style.display = 'none';
-    document.getElementById('btn-kategori-action').style.display = '';
-});
+const tabSkillsBtn   = document.getElementById('tab-skills-btn');
+const tabKategoriBtn = document.getElementById('tab-kategori-btn');
+const btnSkillsAct   = document.getElementById('btn-skills-action');
+const btnKategoriAct = document.getElementById('btn-kategori-action');
+
+function showSkillsAction() {
+    btnSkillsAct.style.display   = '';
+    btnKategoriAct.style.display = 'none';
+}
+
+function showKategoriAction() {
+    btnSkillsAct.style.display   = 'none';
+    btnKategoriAct.style.display = '';
+}
+
+tabSkillsBtn.addEventListener('shown.bs.tab', showSkillsAction);
+tabKategoriBtn.addEventListener('shown.bs.tab', showKategoriAction);
+tabSkillsBtn.addEventListener('click', showSkillsAction);
+tabKategoriBtn.addEventListener('click', showKategoriAction);
 
 // Switch ke tab Kategori dari link dalam modal
 function switchToKategoriTab() {
-    // Tutup modal skill dulu
-    const addModal = bootstrap.Modal.getInstance(document.getElementById('addSkillModal'));
-    if (addModal) addModal.hide();
-    // Aktifkan tab kategori
+    const addModalEl = document.getElementById('addSkillModal');
+    const modalInstance = bootstrap.Modal.getInstance(addModalEl) || new bootstrap.Modal(addModalEl);
+    modalInstance.hide();
+
     setTimeout(() => {
-        document.getElementById('tab-kategori-btn').click();
-        document.getElementById('btn-kategori-action').click(); // picu modal tambah kategori
-        // Trigger modal tambah kategori
-        setTimeout(() => new bootstrap.Modal(document.getElementById('addCatModal')).show(), 150);
+        const tabTrigger = new bootstrap.Tab(tabKategoriBtn);
+        tabTrigger.show();
+        showKategoriAction();
+
+        setTimeout(() => {
+            const addCatModal = new bootstrap.Modal(document.getElementById('addCatModal'));
+            addCatModal.show();
+        }, 200);
     }, 300);
 }
 
@@ -606,7 +621,9 @@ function confirmDeleteCat(form, name, count) {
 // ── Auto-aktivasi tab dari URL hash ──
 document.addEventListener('DOMContentLoaded', function () {
     if (window.location.hash === '#tab-kategori') {
-        document.getElementById('tab-kategori-btn').click();
+        const tabTrigger = new bootstrap.Tab(tabKategoriBtn);
+        tabTrigger.show();
+        showKategoriAction();
     }
 });
 </script>
