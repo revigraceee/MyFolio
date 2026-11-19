@@ -50,23 +50,23 @@ foreach ($navGroups as $group => $pages) {
 
         <!-- ── Brand ── -->
         <div class="d-flex align-items-center gap-2 px-2 pt-2 pb-3">
-            <span style="width:38px;height:38px;border-radius:10px;background:var(--color-primary);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <span style="width:38px;height:38px;border-radius:10px;background:var(--color-primary);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 3px 8px rgba(92,111,43,.25);">
                 <i class="bi bi-person-workspace text-white" style="font-size:1.1rem;"></i>
             </span>
             <div>
-                <div class="admin-brand">My<span style="color:#8A9A5B;">Folio</span></div>
-                <div style="font-size:0.65rem;color:rgba(186,194,174,0.5);letter-spacing:.3px;">CMS Admin Panel v2.0</div>
+                <div class="admin-brand">My<span style="color:var(--color-primary);">Folio</span></div>
+                <div style="font-size:0.65rem;color:var(--color-muted);letter-spacing:.3px;">CMS Admin Panel v2.0</div>
             </div>
         </div>
 
         <!-- ── Admin Info ── -->
-        <div style="margin:0 4px 10px;padding:10px 12px;background:rgba(255,255,255,0.05);border-radius:10px;border:1px solid rgba(255,255,255,0.06);">
-            <div style="font-size:0.68rem;color:rgba(186,194,174,0.45);margin-bottom:4px;letter-spacing:.3px;">LOGGED IN AS</div>
+        <div style="margin:0 4px 10px;padding:10px 12px;background:#F4F6EE;border-radius:10px;border:1px solid #E1E6D5;">
+            <div style="font-size:0.66rem;color:#788070;margin-bottom:3px;letter-spacing:.4px;font-weight:700;">LOGGED IN AS</div>
             <div class="d-flex align-items-center gap-2">
                 <span style="width:28px;height:28px;border-radius:50%;background:var(--color-primary);display:flex;align-items:center;justify-content:center;font-size:.8rem;color:#fff;font-weight:700;flex-shrink:0;">
                     <?= strtoupper(substr($_SESSION['admin_username'] ?? 'A', 0, 1)) ?>
                 </span>
-                <span style="font-size:.875rem;font-weight:600;color:#E2E4DC;"><?= e($_SESSION['admin_username'] ?? 'admin') ?></span>
+                <span style="font-size:.875rem;font-weight:700;color:var(--color-dark);"><?= e($_SESSION['admin_username'] ?? 'admin') ?></span>
             </div>
         </div>
 
@@ -184,11 +184,11 @@ foreach ($navGroups as $group => $pages) {
         <!-- ── Footer Actions ── -->
         <hr class="sidebar-divider mt-3 mb-2">
         <div class="d-flex flex-column gap-1 pb-1">
-            <a href="../index.php" target="_blank" class="admin-nav-link" style="color:rgba(186,194,174,0.65);font-size:.82rem;">
-                <i class="bi bi-box-arrow-up-right"></i><span>Lihat Portofolio</span>
+            <a href="../index.php" target="_blank" class="admin-nav-link" style="color:var(--color-primary);font-size:.84rem;font-weight:600;">
+                <i class="bi bi-box-arrow-up-right" style="color:var(--color-primary);"></i><span>Lihat Portofolio</span>
             </a>
-            <a href="logout.php" class="admin-nav-link" style="color:#F87171;font-size:.82rem;">
-                <i class="bi bi-power"></i><span>Keluar</span>
+            <a href="logout.php" class="admin-nav-link" style="color:#DC2626;font-size:.84rem;font-weight:600;">
+                <i class="bi bi-power" style="color:#DC2626;"></i><span>Keluar</span>
             </a>
         </div>
 
