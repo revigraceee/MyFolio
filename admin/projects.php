@@ -302,31 +302,61 @@ require_once __DIR__ . '/includes/admin_header.php';
 
                         <!-- Short Description -->
                         <div class="col-12">
-                            <label class="form-label text-muted small fw-semibold">Ringkasan Singkat *</label>
-                            <textarea name="short_description" rows="2" class="form-control form-folio" required></textarea>
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label text-muted small fw-semibold mb-0">Ringkasan Singkat</label>
+                                <button type="button" class="btn btn-link btn-sm text-danger p-0 text-decoration-none" style="font-size:0.75rem;" onclick="clearField('addShortDesc')">
+                                    <i class="bi bi-x-circle me-1"></i>Hapus Isi
+                                </button>
+                            </div>
+                            <textarea name="short_description" id="addShortDesc" rows="2" class="form-control form-folio" placeholder="Ringkasan singkat proyek..."></textarea>
                         </div>
                         <!-- Deskripsi Lengkap -->
                         <div class="col-12">
-                            <label class="form-label text-muted small fw-semibold">Deskripsi Lengkap / Latar Belakang *</label>
-                            <textarea name="description" rows="3" class="form-control form-folio" required></textarea>
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label text-muted small fw-semibold mb-0">Deskripsi Lengkap / Latar Belakang</label>
+                                <button type="button" class="btn btn-link btn-sm text-danger p-0 text-decoration-none" style="font-size:0.75rem;" onclick="clearField('addDesc')">
+                                    <i class="bi bi-x-circle me-1"></i>Hapus Isi
+                                </button>
+                            </div>
+                            <textarea name="description" id="addDesc" rows="3" class="form-control form-folio" placeholder="Deskripsi lengkap atau latar belakang masalah..."></textarea>
                         </div>
                         <!-- Peran & Tools -->
                         <div class="col-md-6">
-                            <label class="form-label text-muted small fw-semibold">Peran / Tanggung Jawab</label>
-                            <input type="text" name="role" class="form-control form-folio" placeholder="cth: Lead Business Strategist">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label text-muted small fw-semibold mb-0">Peran / Tanggung Jawab</label>
+                                <button type="button" class="btn btn-link btn-sm text-danger p-0 text-decoration-none" style="font-size:0.75rem;" onclick="clearField('addRole')">
+                                    <i class="bi bi-x-circle me-1"></i>Hapus Isi
+                                </button>
+                            </div>
+                            <input type="text" name="role" id="addRole" class="form-control form-folio" placeholder="cth: Lead Business Strategist">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label text-muted small fw-semibold">Tools yang Digunakan</label>
-                            <input type="text" name="tools" class="form-control form-folio" placeholder="Figma, Meta Ads, Excel">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label text-muted small fw-semibold mb-0">Tools yang Digunakan</label>
+                                <button type="button" class="btn btn-link btn-sm text-danger p-0 text-decoration-none" style="font-size:0.75rem;" onclick="clearField('addTools')">
+                                    <i class="bi bi-x-circle me-1"></i>Hapus Isi
+                                </button>
+                            </div>
+                            <input type="text" name="tools" id="addTools" class="form-control form-folio" placeholder="Figma, Meta Ads, Excel">
                         </div>
                         <!-- Proses & Hasil -->
                         <div class="col-md-6">
-                            <label class="form-label text-muted small fw-semibold">Proses Pengerjaan</label>
-                            <textarea name="process" rows="2" class="form-control form-folio"></textarea>
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label text-muted small fw-semibold mb-0">Proses Pengerjaan</label>
+                                <button type="button" class="btn btn-link btn-sm text-danger p-0 text-decoration-none" style="font-size:0.75rem;" onclick="clearField('addProcess')">
+                                    <i class="bi bi-x-circle me-1"></i>Hapus Isi
+                                </button>
+                            </div>
+                            <textarea name="process" id="addProcess" rows="2" class="form-control form-folio" placeholder="Proses atau metodologi pengerjaan..."></textarea>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label text-muted small fw-semibold">Hasil & Dampak</label>
-                            <textarea name="result" rows="2" class="form-control form-folio"></textarea>
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label text-muted small fw-semibold mb-0">Hasil & Dampak</label>
+                                <button type="button" class="btn btn-link btn-sm text-danger p-0 text-decoration-none" style="font-size:0.75rem;" onclick="clearField('addResult')">
+                                    <i class="bi bi-x-circle me-1"></i>Hapus Isi
+                                </button>
+                            </div>
+                            <textarea name="result" id="addResult" rows="2" class="form-control form-folio" placeholder="Hasil, dampak, atau pencapaian..."></textarea>
                         </div>
                         <!-- URL -->
                         <div class="col-md-6">
@@ -418,31 +448,61 @@ require_once __DIR__ . '/includes/admin_header.php';
 
                         <!-- Short Description -->
                         <div class="col-12">
-                            <label class="form-label text-muted small fw-semibold">Ringkasan Singkat *</label>
-                            <textarea name="short_description" id="editShortDesc" rows="2" class="form-control form-folio" required></textarea>
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label text-muted small fw-semibold mb-0">Ringkasan Singkat</label>
+                                <button type="button" class="btn btn-link btn-sm text-danger p-0 text-decoration-none" style="font-size:0.75rem;" onclick="clearField('editShortDesc')">
+                                    <i class="bi bi-x-circle me-1"></i>Hapus Isi
+                                </button>
+                            </div>
+                            <textarea name="short_description" id="editShortDesc" rows="2" class="form-control form-folio" placeholder="Ringkasan singkat proyek..."></textarea>
                         </div>
                         <!-- Deskripsi Lengkap -->
                         <div class="col-12">
-                            <label class="form-label text-muted small fw-semibold">Deskripsi Lengkap *</label>
-                            <textarea name="description" id="editDesc" rows="3" class="form-control form-folio" required></textarea>
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label text-muted small fw-semibold mb-0">Deskripsi Lengkap</label>
+                                <button type="button" class="btn btn-link btn-sm text-danger p-0 text-decoration-none" style="font-size:0.75rem;" onclick="clearField('editDesc')">
+                                    <i class="bi bi-x-circle me-1"></i>Hapus Isi
+                                </button>
+                            </div>
+                            <textarea name="description" id="editDesc" rows="3" class="form-control form-folio" placeholder="Deskripsi lengkap atau latar belakang masalah..."></textarea>
                         </div>
                         <!-- Peran & Tools -->
                         <div class="col-md-6">
-                            <label class="form-label text-muted small fw-semibold">Peran / Tanggung Jawab</label>
-                            <input type="text" name="role" id="editRole" class="form-control form-folio">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label text-muted small fw-semibold mb-0">Peran / Tanggung Jawab</label>
+                                <button type="button" class="btn btn-link btn-sm text-danger p-0 text-decoration-none" style="font-size:0.75rem;" onclick="clearField('editRole')">
+                                    <i class="bi bi-x-circle me-1"></i>Hapus Isi
+                                </button>
+                            </div>
+                            <input type="text" name="role" id="editRole" class="form-control form-folio" placeholder="cth: Lead Business Strategist">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label text-muted small fw-semibold">Tools yang Digunakan</label>
-                            <input type="text" name="tools" id="editTools" class="form-control form-folio">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label text-muted small fw-semibold mb-0">Tools yang Digunakan</label>
+                                <button type="button" class="btn btn-link btn-sm text-danger p-0 text-decoration-none" style="font-size:0.75rem;" onclick="clearField('editTools')">
+                                    <i class="bi bi-x-circle me-1"></i>Hapus Isi
+                                </button>
+                            </div>
+                            <input type="text" name="tools" id="editTools" class="form-control form-folio" placeholder="Figma, Meta Ads, Excel">
                         </div>
                         <!-- Proses & Hasil -->
                         <div class="col-md-6">
-                            <label class="form-label text-muted small fw-semibold">Proses Pengerjaan</label>
-                            <textarea name="process" id="editProcess" rows="2" class="form-control form-folio"></textarea>
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label text-muted small fw-semibold mb-0">Proses Pengerjaan</label>
+                                <button type="button" class="btn btn-link btn-sm text-danger p-0 text-decoration-none" style="font-size:0.75rem;" onclick="clearField('editProcess')">
+                                    <i class="bi bi-x-circle me-1"></i>Hapus Isi
+                                </button>
+                            </div>
+                            <textarea name="process" id="editProcess" rows="2" class="form-control form-folio" placeholder="Proses atau metodologi pengerjaan..."></textarea>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label text-muted small fw-semibold">Hasil & Dampak</label>
-                            <textarea name="result" id="editResult" rows="2" class="form-control form-folio"></textarea>
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label text-muted small fw-semibold mb-0">Hasil & Dampak</label>
+                                <button type="button" class="btn btn-link btn-sm text-danger p-0 text-decoration-none" style="font-size:0.75rem;" onclick="clearField('editResult')">
+                                    <i class="bi bi-x-circle me-1"></i>Hapus Isi
+                                </button>
+                            </div>
+                            <textarea name="result" id="editResult" rows="2" class="form-control form-folio" placeholder="Hasil, dampak, atau pencapaian..."></textarea>
                         </div>
                         <!-- URL -->
                         <div class="col-md-6">
@@ -493,6 +553,14 @@ require_once __DIR__ . '/includes/admin_header.php';
 
 <!-- ══ Scripts ══ -->
 <script>
+function clearField(fieldId) {
+    const el = document.getElementById(fieldId);
+    if (el) {
+        el.value = '';
+        el.focus();
+    }
+}
+
 function openEditProject(p) {
     document.getElementById('editProjId').value         = p.id;
     document.getElementById('editTitle').value          = p.title || '';
