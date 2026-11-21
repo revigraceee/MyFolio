@@ -4,7 +4,7 @@ require_once __DIR__ . '/config/database.php';
 require_once __DIR__ . '/includes/functions.php';
 
 // Handle Contact Form Submission (AJAX & POST)
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'send_message') {
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action']) && $_POST['action'] === 'send_message') {
     $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
 
     $name    = trim($_POST['sender_name'] ?? '');
@@ -68,6 +68,48 @@ $projects = $pdo->query("
     WHERE p.status = 'published'
     ORDER BY p.is_featured DESC, p.sort_order ASC, p.created_at DESC
 ")->fetchAll();
+
+// Fetch all gallery images for projects
+$galleryImages = $pdo->query("SELECT * FROM project_images ORDER BY sort_order ASC, id ASC")->fetchAll();
+$projectGalleries = [];
+foreach ($galleryImages as $img) {
+    $projectGalleries[$img['project_id']][] = [
+        'id'         => (int)$img['id'],
+        'image_path' => $img['image_path'],
+        'url'        => resolve_img($img['image_path'], 'projects', 'assets/img/placeholder.png')
+    ];
+}
+
+foreach ($projects as &$pj) {
+    $pj['gallery'] = $projectGalleries[$pj['id']] ?? [];
+    $thumbUrl = resolve_img($pj['thumbnail'], 'projects', 'assets/img/placeholder.png');
+
+    // Build ordered list of all images for detail & lightbox slider
+    $all = [];
+    if (!empty($pj['thumbnail']) && $pj['thumbnail'] !== 'placeholder.png') {
+        $all[] = [
+            'type'  => 'cover',
+            'url'   => $thumbUrl,
+            'title' => $pj['title'] . ' (Sampul)'
+        ];
+    }
+    foreach ($pj['gallery'] as $idx => $g) {
+        $all[] = [
+            'type'  => 'gallery',
+            'url'   => $g['url'],
+            'title' => $pj['title'] . ' (Foto ' . ($idx + 1) . ')'
+        ];
+    }
+    if (empty($all)) {
+        $all[] = [
+            'type'  => 'cover',
+            'url'   => $thumbUrl,
+            'title' => $pj['title']
+        ];
+    }
+    $pj['all_images'] = $all;
+}
+unset($pj);
 
 // Extract unique categories for filter pills
 $categories = [];
@@ -272,6 +314,11 @@ require_once __DIR__ . '/includes/navbar.php';
                                 <?php if (!empty($pj['is_featured'])): ?>
                                     <span class="project-featured-pill">
                                         <i class="bi bi-star-fill me-1"></i> Featured
+                                    </span>
+                                <?php endif; ?>
+                                <?php if (!empty($pj['all_images']) && count($pj['all_images']) > 1): ?>
+                                    <span class="project-gallery-pill">
+                                        <i class="bi bi-images me-1"></i><?= count($pj['all_images']) ?> Foto
                                     </span>
                                 <?php endif; ?>
                             </div>
@@ -582,14 +629,38 @@ require_once __DIR__ . '/includes/navbar.php';
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-4">
-                <!-- Clickable Image Thumbnail with Zoom Hint -->
-                <div class="project-modal-img-wrap position-relative rounded-3 overflow-hidden mb-4 shadow-sm"
+                <!-- Clickable Image Thumbnail with Zoom Hint & Navigation -->
+                <div class="position-relative rounded-3 overflow-hidden mb-3 shadow-sm project-modal-img-wrap"
                      onclick="openFullImage()" role="button" title="Klik untuk melihat gambar ukuran penuh">
                     <img id="mProjThumb" src="" alt="" class="w-100 object-fit-cover" style="max-height: 380px;">
+
+                    <!-- Zoom Overlay -->
                     <div class="img-zoom-overlay position-absolute bottom-0 end-0 m-3 px-3 py-1.5 rounded-pill bg-dark bg-opacity-75 text-white small d-flex align-items-center gap-1.5 shadow-sm">
                         <i class="bi bi-arrows-fullscreen"></i>
                         <span style="font-size: 0.78rem; font-weight: 600;">Lihat Ukuran Penuh</span>
                     </div>
+
+                    <!-- Counter Badge (shown if multiple images) -->
+                    <div id="mProjImgBadge" class="position-absolute top-0 start-0 m-3 px-2.5 py-1 rounded-pill bg-dark bg-opacity-75 text-white small d-none" style="font-size:0.75rem; z-index:4;">
+                        <i class="bi bi-images me-1"></i><span id="mProjImgIndex">1</span> / <span id="mProjImgTotal">1</span>
+                    </div>
+
+                    <!-- Prev Button inside Detail Modal Image -->
+                    <button type="button" class="detail-nav-btn detail-nav-prev d-none" id="mProjPrevBtn"
+                            onclick="detailImagePrev(event)" title="Foto Sebelumnya">
+                        <i class="bi bi-chevron-left"></i>
+                    </button>
+
+                    <!-- Next Button inside Detail Modal Image -->
+                    <button type="button" class="detail-nav-btn detail-nav-next d-none" id="mProjNextBtn"
+                            onclick="detailImageNext(event)" title="Foto Berikutnya">
+                        <i class="bi bi-chevron-right"></i>
+                    </button>
+                </div>
+
+                <!-- Detail Thumbnail Strip (if multiple images) -->
+                <div id="mProjThumbStrip" class="d-flex gap-2 overflow-x-auto pb-2 mb-3 d-none">
+                    <!-- Populated by JS -->
                 </div>
 
                 <div class="row g-4 mb-4">
@@ -634,48 +705,74 @@ require_once __DIR__ . '/includes/navbar.php';
     </div>
 </div>
 
-<!-- MODAL FULL IMAGE PREVIEW / LIGHTBOX -->
-<div class="modal fade" id="fullImageModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="false" style="z-index: 1070; background-color: rgba(15, 20, 10, 0.9); backdrop-filter: blur(8px);">
+<!-- MODAL FULL IMAGE PREVIEW / LIGHTBOX (Dukungan Slide Kiri & Kanan) -->
+<div class="modal fade" id="fullImageModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="false" style="z-index: 1070; background-color: rgba(15, 20, 10, 0.95); backdrop-filter: blur(10px);">
     <div class="modal-dialog modal-dialog-centered modal-xl">
-        <div class="modal-content bg-transparent border-0 shadow-none">
+        <div class="modal-content bg-transparent border-0 shadow-none position-relative">
             <!-- Header Bar -->
             <div class="d-flex justify-content-between align-items-center mb-3 px-2">
                 <div class="d-flex align-items-center gap-2 text-white">
                     <i class="bi bi-image fs-5" style="color: var(--color-soft-olive);"></i>
                     <span class="fw-bold fs-6 text-truncate pe-2" id="fullImgTitle">Pratinjau Gambar</span>
+                    <span id="fullImgCounter" class="badge rounded-pill bg-white bg-opacity-15 text-white px-2.5 py-1 small fw-normal">1 / 1</span>
                 </div>
                 <div class="d-flex align-items-center gap-2">
-                    <a href="#" id="fullImgNewTab" target="_blank" class="btn btn-sm btn-outline-light rounded-pill px-3 py-1.5 d-flex align-items-center gap-1.5" title="Buka di tab baru">
+                    <a href="#" id="fullImgNewTab" target="_blank" class="btn btn-sm btn-outline-light rounded-pill px-3 py-1.5 d-flex align-items-center gap-1.5" title="Buka gambar di tab baru">
                         <i class="bi bi-box-arrow-up-right"></i>
                         <span class="small">Buka Asli</span>
                     </a>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
             </div>
-            <!-- Image Body -->
-            <div class="modal-body p-0 text-center position-relative d-flex justify-content-center align-items-center">
+
+            <!-- Image Body with Floating Slide Arrows -->
+            <div class="modal-body p-0 text-center position-relative d-flex justify-content-center align-items-center" style="min-height: 50vh;">
+                <!-- Prev Button -->
+                <button type="button" class="lightbox-arrow-btn lightbox-arrow-prev" id="fullImgPrevBtn" onclick="fullImagePrev(event)" title="Gambar Sebelumnya (Panah Kiri)">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+
+                <!-- Main Lightbox Image -->
                 <img id="fullImgElement" src="" alt="" class="img-fluid rounded-3 shadow-lg"
-                     style="max-height: 82vh; max-width: 100%; object-fit: contain; background-color: rgba(255,255,255,0.03);">
+                     style="max-height: 80vh; max-width: 100%; object-fit: contain; background-color: rgba(255,255,255,0.03); transition: opacity 0.2s ease, transform 0.2s ease;">
+
+                <!-- Next Button -->
+                <button type="button" class="lightbox-arrow-btn lightbox-arrow-next" id="fullImgNextBtn" onclick="fullImageNext(event)" title="Gambar Berikutnya (Panah Kanan)">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
             </div>
+
+            <!-- Lightbox Thumbnail Strip (if multiple) -->
+            <div id="fullImgThumbStrip" class="d-flex justify-content-center gap-2 mt-3 overflow-x-auto py-1 px-3"></div>
         </div>
     </div>
 </div>
 
 <script>
-let currentDetailImgUrl = '';
-let currentDetailTitle = '';
+let currentProject = null;
+let currentDetailIndex = 0;
+let lightboxImages = [];
+let fullImageIndex = 0;
 
 function openProjectModal(project, thumbUrl) {
-    currentDetailImgUrl = thumbUrl;
-    currentDetailTitle = project.title;
+    currentProject = project;
+
+    // Ensure all_images exists
+    if (!project.all_images || project.all_images.length === 0) {
+        const fallbackUrl = thumbUrl || (project.thumbnail ? 'uploads/projects/' + project.thumbnail : 'assets/img/placeholder.png');
+        project.all_images = [{ url: fallbackUrl, title: project.title }];
+    }
+
+    currentDetailIndex = 0;
 
     document.getElementById('mProjTitle').innerText = project.title;
     document.getElementById('mProjCategory').innerText = project.display_category || project.category;
-    document.getElementById('mProjThumb').src = thumbUrl;
-    document.getElementById('mProjThumb').alt = project.title;
     document.getElementById('mProjRole').innerText = project.role || '—';
     document.getElementById('mProjTools').innerText = project.tools || '—';
     document.getElementById('mProjDesc').innerText = project.description || project.short_description || '—';
+
+    // Update detail image view
+    updateDetailImageView();
 
     const pWrap = document.getElementById('mProjProcessWrap');
     if (project.process) {
@@ -712,23 +809,225 @@ function openProjectModal(project, thumbUrl) {
     new bootstrap.Modal(document.getElementById('projectDetailModal')).show();
 }
 
-function openFullImage() {
-    if (!currentDetailImgUrl) return;
-    document.getElementById('fullImgElement').src = currentDetailImgUrl;
-    document.getElementById('fullImgTitle').innerText = currentDetailTitle || 'Pratinjau Gambar';
-    document.getElementById('fullImgNewTab').href = currentDetailImgUrl;
+function updateDetailImageView() {
+    if (!currentProject || !currentProject.all_images || currentProject.all_images.length === 0) return;
+    const images = currentProject.all_images;
+    const count = images.length;
+
+    if (currentDetailIndex < 0) currentDetailIndex = 0;
+    if (currentDetailIndex >= count) currentDetailIndex = count - 1;
+
+    const currentImg = images[currentDetailIndex];
+    const mThumb = document.getElementById('mProjThumb');
+    mThumb.src = currentImg.url;
+    mThumb.alt = currentImg.title || currentProject.title;
+
+    const badge = document.getElementById('mProjImgBadge');
+    const prevBtn = document.getElementById('mProjPrevBtn');
+    const nextBtn = document.getElementById('mProjNextBtn');
+    const strip = document.getElementById('mProjThumbStrip');
+
+    if (count > 1) {
+        badge.classList.remove('d-none');
+        document.getElementById('mProjImgIndex').innerText = currentDetailIndex + 1;
+        document.getElementById('mProjImgTotal').innerText = count;
+
+        prevBtn.classList.remove('d-none');
+        nextBtn.classList.remove('d-none');
+
+        // Render thumbnail strip
+        strip.classList.remove('d-none');
+        strip.innerHTML = '';
+        images.forEach((img, idx) => {
+            const thumbItem = document.createElement('div');
+            thumbItem.className = 'detail-thumb-item ' + (idx === currentDetailIndex ? 'active' : '');
+            thumbItem.style.width = '64px';
+            thumbItem.style.height = '48px';
+            thumbItem.style.opacity = (idx === currentDetailIndex ? '1' : '0.6');
+            thumbItem.innerHTML = `<img src="${img.url}" alt="" style="width:100%; height:100%; object-fit:cover;">`;
+            thumbItem.onclick = function(e) {
+                e.stopPropagation();
+                currentDetailIndex = idx;
+                updateDetailImageView();
+            };
+            strip.appendChild(thumbItem);
+        });
+    } else {
+        badge.classList.add('d-none');
+        prevBtn.classList.add('d-none');
+        nextBtn.classList.add('d-none');
+        strip.classList.add('d-none');
+        strip.innerHTML = '';
+    }
+}
+
+function detailImagePrev(e) {
+    if (e) e.stopPropagation();
+    if (!currentProject || !currentProject.all_images || currentProject.all_images.length <= 1) return;
+    currentDetailIndex = (currentDetailIndex - 1 + currentProject.all_images.length) % currentProject.all_images.length;
+    updateDetailImageView();
+}
+
+function detailImageNext(e) {
+    if (e) e.stopPropagation();
+    if (!currentProject || !currentProject.all_images || currentProject.all_images.length <= 1) return;
+    currentDetailIndex = (currentDetailIndex + 1) % currentProject.all_images.length;
+    updateDetailImageView();
+}
+
+// ── FULL IMAGE PREVIEW / LIGHTBOX NAVIGATION ──────────────
+function openFullImage(targetIndex) {
+    if (!currentProject || !currentProject.all_images || currentProject.all_images.length === 0) return;
+    lightboxImages = currentProject.all_images;
+    fullImageIndex = (targetIndex !== undefined) ? targetIndex : currentDetailIndex;
+
+    renderLightboxStrip();
+    updateLightboxView(fullImageIndex);
+
     new bootstrap.Modal(document.getElementById('fullImageModal')).show();
 }
 
-// Klik area gelap di luar gambar untuk menutup modal full image
+function renderLightboxStrip() {
+    const strip = document.getElementById('fullImgThumbStrip');
+    if (!strip) return;
+    strip.innerHTML = '';
+
+    if (lightboxImages.length <= 1) {
+        strip.classList.add('d-none');
+        return;
+    }
+    strip.classList.remove('d-none');
+
+    lightboxImages.forEach((img, idx) => {
+        const item = document.createElement('div');
+        item.className = 'lb-strip-thumb ' + (idx === fullImageIndex ? 'active' : '');
+        item.style.width = '56px';
+        item.style.height = '40px';
+        item.style.opacity = (idx === fullImageIndex ? '1' : '0.5');
+        item.innerHTML = `<img src="${img.url}" alt="" style="width:100%; height:100%; object-fit:cover;">`;
+        item.onclick = function(e) {
+            e.stopPropagation();
+            fullImageIndex = idx;
+            updateLightboxView(fullImageIndex);
+        };
+        strip.appendChild(item);
+    });
+}
+
+function updateLightboxView(idx) {
+    if (lightboxImages.length === 0) return;
+    if (idx < 0) idx = 0;
+    if (idx >= lightboxImages.length) idx = lightboxImages.length - 1;
+    fullImageIndex = idx;
+
+    const img = lightboxImages[idx];
+    const fullEl = document.getElementById('fullImgElement');
+    const titleEl = document.getElementById('fullImgTitle');
+    const newTabEl = document.getElementById('fullImgNewTab');
+    const counterEl = document.getElementById('fullImgCounter');
+    const prevBtn = document.getElementById('fullImgPrevBtn');
+    const nextBtn = document.getElementById('fullImgNextBtn');
+
+    // Smooth transition
+    fullEl.style.opacity = '0.3';
+    setTimeout(() => {
+        fullEl.src = img.url;
+        fullEl.alt = img.title || currentProject.title;
+        titleEl.innerText = img.title || currentProject.title;
+        newTabEl.href = img.url;
+        counterEl.innerText = `${idx + 1} / ${lightboxImages.length}`;
+        fullEl.style.opacity = '1';
+
+        // Update active thumbnail in strip
+        const thumbs = document.querySelectorAll('.lb-strip-thumb');
+        thumbs.forEach((t, tIdx) => {
+            if (tIdx === idx) {
+                t.classList.add('active');
+                t.style.opacity = '1';
+                t.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            } else {
+                t.classList.remove('active');
+                t.style.opacity = '0.5';
+            }
+        });
+
+        // Sync with detail modal
+        currentDetailIndex = idx;
+        updateDetailImageView();
+    }, 120);
+
+    if (lightboxImages.length > 1) {
+        prevBtn.classList.remove('d-none');
+        nextBtn.classList.remove('d-none');
+        counterEl.classList.remove('d-none');
+    } else {
+        prevBtn.classList.add('d-none');
+        nextBtn.classList.add('d-none');
+        counterEl.classList.add('d-none');
+    }
+}
+
+function fullImagePrev(e) {
+    if (e) e.stopPropagation();
+    if (lightboxImages.length <= 1) return;
+    fullImageIndex = (fullImageIndex - 1 + lightboxImages.length) % lightboxImages.length;
+    updateLightboxView(fullImageIndex);
+}
+
+function fullImageNext(e) {
+    if (e) e.stopPropagation();
+    if (lightboxImages.length <= 1) return;
+    fullImageIndex = (fullImageIndex + 1) % lightboxImages.length;
+    updateLightboxView(fullImageIndex);
+}
+
+// ── KEYBOARD NAVIGATION & SWIPE GESTURES ──────────────────
 document.addEventListener('DOMContentLoaded', () => {
     const fullImgModalEl = document.getElementById('fullImageModal');
     if (fullImgModalEl) {
+        // Klik di luar gambar untuk menutup modal
         fullImgModalEl.addEventListener('click', function(e) {
-            if (e.target === this || e.target.classList.contains('modal-dialog')) {
+            if (e.target === this || e.target.classList.contains('modal-dialog') || e.target.classList.contains('modal-body')) {
                 bootstrap.Modal.getInstance(this)?.hide();
             }
         });
+
+        // Keyboard arrow navigation
+        window.addEventListener('keydown', (e) => {
+            if (!fullImgModalEl.classList.contains('show')) return;
+            if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                fullImagePrev();
+            } else if (e.key === 'ArrowRight') {
+                e.preventDefault();
+                fullImageNext();
+            }
+        });
+
+        // Touch swipe gesture support for mobile/tablets
+        let touchStartX = 0;
+        let touchEndX = 0;
+        fullImgModalEl.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+        }, { passive: true });
+
+        fullImgModalEl.addEventListener('touchend', (e) => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleGesture();
+        }, { passive: true });
+
+        function handleGesture() {
+            const diffX = touchEndX - touchStartX;
+            if (Math.abs(diffX) > 45) {
+                if (diffX < 0) {
+                    // Swiped left -> next
+                    fullImageNext();
+                } else {
+                    // Swiped right -> prev
+                    fullImagePrev();
+                }
+            }
+        }
     }
 });
 </script>

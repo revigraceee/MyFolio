@@ -64,6 +64,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $thumbnail, $projUrl, $repoUrl,
                 $isFeatured, $status, $sortOrder
             ]);
+            $newProjId = (int)$pdo->lastInsertId();
+
+            // Handle multiple gallery photos
+            if ($newProjId > 0 && !empty($_FILES['gallery_files'])) {
+                $galleryUploads = handle_multiple_file_uploads($_FILES['gallery_files'], 'projects');
+                if (!empty($galleryUploads)) {
+                    $insGal = $pdo->prepare("INSERT INTO project_images (project_id, image_path, sort_order) VALUES (?, ?, ?)");
+                    foreach ($galleryUploads as $idx => $gImg) {
+                        $insGal->execute([$newProjId, $gImg, $idx + 1]);
+                    }
+                }
+            }
+
             set_flash('success', 'Proyek baru berhasil ditambahkan!');
         } catch (PDOException $e) {
             set_flash('danger', 'Gagal menambah proyek: ' . $e->getMessage());
@@ -121,11 +134,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $thumbnail, $projUrl, $repoUrl,
                 $isFeatured, $status, $sortOrder, $id
             ]);
+
+            // Handle additional gallery photos upload
+            if ($id > 0 && !empty($_FILES['gallery_files'])) {
+                $galleryUploads = handle_multiple_file_uploads($_FILES['gallery_files'], 'projects');
+                if (!empty($galleryUploads)) {
+                    $maxOrder = (int)$pdo->query("SELECT COALESCE(MAX(sort_order), 0) FROM project_images WHERE project_id = $id")->fetchColumn();
+                    $insGal = $pdo->prepare("INSERT INTO project_images (project_id, image_path, sort_order) VALUES (?, ?, ?)");
+                    foreach ($galleryUploads as $idx => $gImg) {
+                        $insGal->execute([$id, $gImg, $maxOrder + $idx + 1]);
+                    }
+                }
+            }
+
             set_flash('success', 'Data proyek berhasil diperbarui!');
         } catch (PDOException $e) {
             set_flash('danger', 'Gagal memperbarui proyek: ' . $e->getMessage());
         }
 
+        header('Location: projects.php');
+        exit;
+    }
+
+    // ── HAPUS FOTO GALERI (AJAX & POST) ───────────────────────
+    if ($action === 'delete_gallery_image') {
+        $imgId  = (int)($_POST['image_id'] ?? 0);
+        $projId = (int)($_POST['project_id'] ?? 0);
+        $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+
+        if ($imgId > 0) {
+            $q = $pdo->prepare("SELECT image_path FROM project_images WHERE id = ?");
+            $q->execute([$imgId]);
+            $path = $q->fetchColumn();
+            if ($path) {
+                $fileOnDisk = __DIR__ . '/../uploads/projects/' . $path;
+                if (file_exists($fileOnDisk)) {
+                    @unlink($fileOnDisk);
+                }
+                $pdo->prepare("DELETE FROM project_images WHERE id = ?")->execute([$imgId]);
+            }
+            if ($isAjax) {
+                header('Content-Type: application/json');
+                echo json_encode(['status' => 'success', 'message' => 'Foto galeri berhasil dihapus']);
+                exit;
+            }
+            set_flash('success', 'Foto galeri berhasil dihapus.');
+        }
         header('Location: projects.php');
         exit;
     }
@@ -149,6 +203,23 @@ $projects = $pdo->query("
     LEFT JOIN project_categories pc ON p.category_id = pc.id
     ORDER BY p.sort_order ASC, p.created_at DESC
 ")->fetchAll();
+
+// ── Load semua gallery images indexed by project_id ───────
+$galleryImages = $pdo->query("SELECT * FROM project_images ORDER BY sort_order ASC, id ASC")->fetchAll();
+$projectGalleries = [];
+foreach ($galleryImages as $img) {
+    $projectGalleries[$img['project_id']][] = [
+        'id'         => (int)$img['id'],
+        'image_path' => $img['image_path'],
+        'url'        => resolve_img($img['image_path'], 'projects', '../assets/img/placeholder.png', '../')
+    ];
+}
+
+// Attach gallery ke setiap proyek
+foreach ($projects as &$pj) {
+    $pj['gallery'] = $projectGalleries[$pj['id']] ?? [];
+}
+unset($pj);
 
 // ── Load semua kategori untuk dropdown ───────────────────
 $categories = $pdo->query("
@@ -203,7 +274,14 @@ require_once __DIR__ . '/includes/admin_header.php';
                                      class="rounded-2" style="width:70px;height:48px;object-fit:cover;">
                             </td>
                             <td>
-                                <div class="fw-bold text-dark"><?= e($pj['title']) ?></div>
+                                <div class="fw-bold text-dark d-flex align-items-center flex-wrap gap-1">
+                                    <span><?= e($pj['title']) ?></span>
+                                    <?php if (!empty($pj['gallery'])): ?>
+                                        <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle" style="font-size: 0.68rem;" title="<?= count($pj['gallery']) ?> foto galeri">
+                                            <i class="bi bi-images me-1"></i>+<?= count($pj['gallery']) ?>
+                                        </span>
+                                    <?php endif; ?>
+                                </div>
                                 <span class="badge bg-light text-muted border" style="font-size:.72rem;">
                                     <i class="bi bi-tag me-1"></i><?= e($catLabel) ?>
                                 </span>
@@ -369,8 +447,15 @@ require_once __DIR__ . '/includes/admin_header.php';
                         </div>
                         <!-- Thumbnail -->
                         <div class="col-md-6">
-                            <label class="form-label text-muted small fw-semibold">Unggah Thumbnail</label>
+                            <label class="form-label text-muted small fw-semibold">Foto Sampul (Thumbnail Utama)</label>
                             <input type="file" name="thumbnail_file" class="form-control form-folio" accept="image/*">
+                            <div class="form-text text-muted" style="font-size: 0.72rem;">Foto utama yang tampil pada kartu proyek.</div>
+                        </div>
+                        <!-- Multiple Gallery Photos -->
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small fw-semibold">Foto Galeri Tambahan (Bisa Upload Banyak)</label>
+                            <input type="file" name="gallery_files[]" class="form-control form-folio" accept="image/*" multiple>
+                            <div class="form-text text-muted" style="font-size: 0.72rem;">Pilih beberapa foto untuk fitur slide galeri (tekan Ctrl/Shift saat memilih).</div>
                         </div>
                         <!-- Status & Urutan -->
                         <div class="col-md-3">
@@ -515,9 +600,22 @@ require_once __DIR__ . '/includes/admin_header.php';
                         </div>
                         <!-- Thumbnail -->
                         <div class="col-md-6">
-                            <label class="form-label text-muted small fw-semibold">Ganti Thumbnail</label>
+                            <label class="form-label text-muted small fw-semibold">Ganti Foto Sampul / Thumbnail Utama</label>
                             <input type="file" name="thumbnail_file" class="form-control form-folio" accept="image/*">
                             <div class="form-text text-muted" id="editThumbInfo"></div>
+                        </div>
+                        <!-- Multiple Gallery Photos -->
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small fw-semibold">Tambah Foto Galeri Baru (Bisa Pilih Banyak)</label>
+                            <input type="file" name="gallery_files[]" class="form-control form-folio" accept="image/*" multiple>
+                            <div class="form-text text-muted" style="font-size: 0.72rem;">Pilih beberapa foto untuk ditambahkan ke galeri slide.</div>
+                        </div>
+                        <!-- Existing Gallery Container -->
+                        <div class="col-12" id="editGallerySection">
+                            <label class="form-label text-muted small fw-semibold mb-2">Foto Galeri Proyek Saat Ini</label>
+                            <div id="editGalleryList" class="d-flex flex-wrap gap-2 p-3 bg-light rounded-3 border">
+                                <!-- Populated dynamically by JS -->
+                            </div>
                         </div>
                         <!-- Status & Urutan -->
                         <div class="col-md-3">
@@ -553,6 +651,8 @@ require_once __DIR__ . '/includes/admin_header.php';
 
 <!-- ══ Scripts ══ -->
 <script>
+let currentEditingProject = null;
+
 function clearField(fieldId) {
     const el = document.getElementById(fieldId);
     if (el) {
@@ -561,7 +661,74 @@ function clearField(fieldId) {
     }
 }
 
+function renderEditGallery(gallery, projectId) {
+    const list = document.getElementById('editGalleryList');
+    if (!list) return;
+    list.innerHTML = '';
+
+    if (!gallery || gallery.length === 0) {
+        list.innerHTML = '<div class="text-muted small fst-italic py-2 w-100 text-center"><i class="bi bi-images me-1"></i>Belum ada foto galeri tambahan. Unggah foto baru menggunakan form di atas.</div>';
+        return;
+    }
+
+    gallery.forEach((img, idx) => {
+        const item = document.createElement('div');
+        item.className = 'position-relative d-inline-block rounded-3 border overflow-hidden shadow-sm bg-white';
+        item.id = 'gallery-item-' + img.id;
+        item.style.width = '100px';
+        item.style.height = '75px';
+        item.innerHTML = `
+            <img src="${img.url}" alt="Galeri ${idx + 1}" style="width:100%; height:100%; object-fit:cover;">
+            <button type="button" class="btn btn-danger btn-sm p-0 position-absolute top-0 end-0 m-1 rounded-circle d-flex align-items-center justify-content-center shadow"
+                    style="width:22px; height:22px; font-size:11px;"
+                    title="Hapus foto ini"
+                    onclick="deleteGalleryImage(${img.id}, ${projectId})">
+                <i class="bi bi-trash-fill"></i>
+            </button>
+        `;
+        list.appendChild(item);
+    });
+}
+
+function deleteGalleryImage(imgId, projId) {
+    if (!confirm('Hapus foto ini dari galeri proyek?')) return;
+
+    const formData = new FormData();
+    formData.append('csrf_token', '<?= $csrf_token ?>');
+    formData.append('action', 'delete_gallery_image');
+    formData.append('image_id', imgId);
+    formData.append('project_id', projId);
+
+    fetch('projects.php', {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === 'success') {
+            const el = document.getElementById('gallery-item-' + imgId);
+            if (el) el.remove();
+            if (currentEditingProject && currentEditingProject.gallery) {
+                currentEditingProject.gallery = currentEditingProject.gallery.filter(g => g.id !== imgId);
+                if (currentEditingProject.gallery.length === 0) {
+                    renderEditGallery([], projId);
+                }
+            }
+        } else {
+            alert(data.message || 'Gagal menghapus foto.');
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        alert('Terjadi kesalahan saat menghapus foto.');
+    });
+}
+
 function openEditProject(p) {
+    currentEditingProject = p;
     document.getElementById('editProjId').value         = p.id;
     document.getElementById('editTitle').value          = p.title || '';
     document.getElementById('editShortDesc').value      = p.short_description || '';
@@ -584,6 +751,9 @@ function openEditProject(p) {
     } else {
         thumbInfo.textContent = '';
     }
+
+    // Render gallery images
+    renderEditGallery(p.gallery, p.id);
 
     // Set dropdown kategori berdasarkan category_id (FK)
     const sel = document.getElementById('editCategoryId');

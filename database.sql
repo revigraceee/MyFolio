@@ -6,6 +6,7 @@ USE `db_myfolio`;
 DROP TABLE IF EXISTS `social_links`;
 DROP TABLE IF EXISTS `education`;
 DROP TABLE IF EXISTS `experiences`;
+DROP TABLE IF EXISTS `project_images`;
 DROP TABLE IF EXISTS `projects`;
 DROP TABLE IF EXISTS `project_categories`;
 DROP TABLE IF EXISTS `skills`;
@@ -72,7 +73,18 @@ CREATE TABLE `projects` (
   CONSTRAINT `fk_projects_category` FOREIGN KEY (`category_id`) REFERENCES `project_categories` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 5. Table skill_categories
+-- 5. Table project_images (Multi-image Gallery)
+CREATE TABLE `project_images` (
+  `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `project_id` INT NOT NULL,
+  `image_path` VARCHAR(255) NOT NULL,
+  `sort_order` INT DEFAULT 0,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX `idx_project_id` (`project_id`),
+  CONSTRAINT `fk_project_images_project` FOREIGN KEY (`project_id`) REFERENCES `projects` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- 6. Table skill_categories
 CREATE TABLE `skill_categories` (
   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
   `category_name` VARCHAR(100) NOT NULL,

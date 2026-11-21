@@ -419,3 +419,122 @@ section {
 #fullImageModal {
     z-index: 1070 !important;
 }
+
+/* Lightbox slide buttons & gallery controls */
+.lightbox-arrow-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    z-index: 1080;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+
+.lightbox-arrow-btn:hover {
+    background: var(--color-primary-olive);
+    border-color: var(--color-primary-olive);
+    color: #ffffff;
+    transform: translateY(-50%) scale(1.1);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.lightbox-arrow-prev {
+    left: -20px;
+}
+
+.lightbox-arrow-next {
+    right: -20px;
+}
+
+@media (max-width: 991px) {
+    .lightbox-arrow-prev { left: 8px; }
+    .lightbox-arrow-next { right: 8px; }
+    .lightbox-arrow-btn {
+        width: 42px;
+        height: 42px;
+        font-size: 1.15rem;
+    }
+}
+
+/* Detail Modal Nav Arrows */
+.detail-nav-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(24, 30, 16, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 5;
+    backdrop-filter: blur(4px);
+}
+
+.detail-nav-btn:hover {
+    background: var(--color-primary-olive);
+    color: #ffffff;
+    transform: translateY(-50%) scale(1.1);
+}
+
+.detail-nav-prev {
+    left: 12px;
+}
+
+.detail-nav-next {
+    right: 12px;
+}
+
+/* Gallery pill on project cards */
+.project-gallery-pill {
+    position: absolute;
+    bottom: 12px;
+    left: 12px;
+    background: rgba(24, 30, 16, 0.8);
+    color: #ffffff;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+    backdrop-filter: blur(4px);
+    z-index: 2;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Thumbnails in Detail and Lightbox */
+.detail-thumb-item, .lb-strip-thumb {
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.2s ease;
+    border-radius: 6px;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.detail-thumb-item.active, .lb-strip-thumb.active {
+    border-color: var(--color-primary-olive) !important;
+    transform: scale(1.05);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+.detail-thumb-item:hover, .lb-strip-thumb:hover {
+    opacity: 1 !important;
+}

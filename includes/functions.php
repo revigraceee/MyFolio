@@ -59,6 +59,33 @@ function handle_file_upload(array $file, string $targetSubdir, array $allowedExt
 }
 
 /**
+ * Handle Multiple File Uploads (Gallery)
+ */
+function handle_multiple_file_uploads(array $filesArray, string $targetSubdir, array $allowedExts = ['jpg', 'jpeg', 'png', 'webp', 'svg']): array {
+    $uploaded = [];
+    if (!isset($filesArray['name']) || !is_array($filesArray['name'])) {
+        return $uploaded;
+    }
+    $count = count($filesArray['name']);
+    for ($i = 0; $i < $count; $i++) {
+        if (isset($filesArray['error'][$i]) && $filesArray['error'][$i] === UPLOAD_ERR_OK) {
+            $single = [
+                'name'     => $filesArray['name'][$i],
+                'type'     => $filesArray['type'][$i] ?? '',
+                'tmp_name' => $filesArray['tmp_name'][$i],
+                'error'    => $filesArray['error'][$i],
+                'size'     => $filesArray['size'][$i] ?? 0,
+            ];
+            $saved = handle_file_upload($single, $targetSubdir, $allowedExts);
+            if ($saved) {
+                $uploaded[] = $saved;
+            }
+        }
+    }
+    return $uploaded;
+}
+
+/**
  * URL Slug Generator
  */
 function generate_slug(string $text): string {
