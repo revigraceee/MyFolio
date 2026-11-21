@@ -387,3 +387,35 @@ section {
     padding: 40px 0;
     color: var(--color-muted);
 }
+
+/* Project Modal Image Clickable Effect & Lightbox */
+.project-modal-img-wrap {
+    cursor: zoom-in;
+    background-color: #E2E4DC;
+    transition: var(--transition);
+}
+
+.project-modal-img-wrap img {
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.project-modal-img-wrap:hover img {
+    transform: scale(1.025);
+}
+
+.img-zoom-overlay {
+    transition: var(--transition);
+    pointer-events: none;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+
+.project-modal-img-wrap:hover .img-zoom-overlay {
+    background-color: rgba(92, 111, 43, 0.92) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
+}
+
+#fullImageModal {
+    z-index: 1070 !important;
+}

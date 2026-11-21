@@ -582,8 +582,14 @@ require_once __DIR__ . '/includes/navbar.php';
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-4">
-                <div class="rounded-3 overflow-hidden mb-4" style="max-height: 320px; background-color: #eee;">
-                    <img id="mProjThumb" src="" alt="" class="w-100 h-100 object-fit-cover">
+                <!-- Clickable Image Thumbnail with Zoom Hint -->
+                <div class="project-modal-img-wrap position-relative rounded-3 overflow-hidden mb-4 shadow-sm"
+                     onclick="openFullImage()" role="button" title="Klik untuk melihat gambar ukuran penuh">
+                    <img id="mProjThumb" src="" alt="" class="w-100 object-fit-cover" style="max-height: 380px;">
+                    <div class="img-zoom-overlay position-absolute bottom-0 end-0 m-3 px-3 py-1.5 rounded-pill bg-dark bg-opacity-75 text-white small d-flex align-items-center gap-1.5 shadow-sm">
+                        <i class="bi bi-arrows-fullscreen"></i>
+                        <span style="font-size: 0.78rem; font-weight: 600;">Lihat Ukuran Penuh</span>
+                    </div>
                 </div>
 
                 <div class="row g-4 mb-4">
@@ -628,14 +634,48 @@ require_once __DIR__ . '/includes/navbar.php';
     </div>
 </div>
 
+<!-- MODAL FULL IMAGE PREVIEW / LIGHTBOX -->
+<div class="modal fade" id="fullImageModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="false" style="z-index: 1070; background-color: rgba(15, 20, 10, 0.9); backdrop-filter: blur(8px);">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content bg-transparent border-0 shadow-none">
+            <!-- Header Bar -->
+            <div class="d-flex justify-content-between align-items-center mb-3 px-2">
+                <div class="d-flex align-items-center gap-2 text-white">
+                    <i class="bi bi-image fs-5" style="color: var(--color-soft-olive);"></i>
+                    <span class="fw-bold fs-6 text-truncate pe-2" id="fullImgTitle">Pratinjau Gambar</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <a href="#" id="fullImgNewTab" target="_blank" class="btn btn-sm btn-outline-light rounded-pill px-3 py-1.5 d-flex align-items-center gap-1.5" title="Buka di tab baru">
+                        <i class="bi bi-box-arrow-up-right"></i>
+                        <span class="small">Buka Asli</span>
+                    </a>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+            </div>
+            <!-- Image Body -->
+            <div class="modal-body p-0 text-center position-relative d-flex justify-content-center align-items-center">
+                <img id="fullImgElement" src="" alt="" class="img-fluid rounded-3 shadow-lg"
+                     style="max-height: 82vh; max-width: 100%; object-fit: contain; background-color: rgba(255,255,255,0.03);">
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
+let currentDetailImgUrl = '';
+let currentDetailTitle = '';
+
 function openProjectModal(project, thumbUrl) {
+    currentDetailImgUrl = thumbUrl;
+    currentDetailTitle = project.title;
+
     document.getElementById('mProjTitle').innerText = project.title;
     document.getElementById('mProjCategory').innerText = project.display_category || project.category;
     document.getElementById('mProjThumb').src = thumbUrl;
+    document.getElementById('mProjThumb').alt = project.title;
     document.getElementById('mProjRole').innerText = project.role || '—';
     document.getElementById('mProjTools').innerText = project.tools || '—';
-    document.getElementById('mProjDesc').innerText = project.description || project.short_description;
+    document.getElementById('mProjDesc').innerText = project.description || project.short_description || '—';
 
     const pWrap = document.getElementById('mProjProcessWrap');
     if (project.process) {
@@ -671,6 +711,26 @@ function openProjectModal(project, thumbUrl) {
 
     new bootstrap.Modal(document.getElementById('projectDetailModal')).show();
 }
+
+function openFullImage() {
+    if (!currentDetailImgUrl) return;
+    document.getElementById('fullImgElement').src = currentDetailImgUrl;
+    document.getElementById('fullImgTitle').innerText = currentDetailTitle || 'Pratinjau Gambar';
+    document.getElementById('fullImgNewTab').href = currentDetailImgUrl;
+    new bootstrap.Modal(document.getElementById('fullImageModal')).show();
+}
+
+// Klik area gelap di luar gambar untuk menutup modal full image
+document.addEventListener('DOMContentLoaded', () => {
+    const fullImgModalEl = document.getElementById('fullImageModal');
+    if (fullImgModalEl) {
+        fullImgModalEl.addEventListener('click', function(e) {
+            if (e.target === this || e.target.classList.contains('modal-dialog')) {
+                bootstrap.Modal.getInstance(this)?.hide();
+            }
+        });
+    }
+});
 </script>
 
 <?php
