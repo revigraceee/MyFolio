@@ -66,22 +66,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ]);
             $newProjId = (int)$pdo->lastInsertId();
 
-            // Handle image_2 (Slide 2)
-            if ($newProjId > 0 && isset($_FILES['image_2']) && $_FILES['image_2']['error'] === UPLOAD_ERR_OK) {
-                $img2 = handle_file_upload($_FILES['image_2'], 'projects');
-                if ($img2) {
-                    $pdo->prepare("INSERT INTO project_images (project_id, image_path, sort_order) VALUES (?, ?, 1)")
-                        ->execute([$newProjId, $img2]);
-                }
-            }
-
-            // Handle optional multiple gallery photos
-            if ($newProjId > 0 && !empty($_FILES['gallery_files'])) {
-                $galleryUploads = handle_multiple_file_uploads($_FILES['gallery_files'], 'projects');
-                if (!empty($galleryUploads)) {
-                    $insGal = $pdo->prepare("INSERT INTO project_images (project_id, image_path, sort_order) VALUES (?, ?, ?)");
-                    foreach ($galleryUploads as $idx => $gImg) {
-                        $insGal->execute([$newProjId, $gImg, $idx + 2]);
+            // Handle image_2, image_3, image_4, image_5 (Slide 2 sampai 5)
+            for ($slot = 2; $slot <= 5; $slot++) {
+                $slotKey = "image_$slot";
+                if ($newProjId > 0 && isset($_FILES[$slotKey]) && $_FILES[$slotKey]['error'] === UPLOAD_ERR_OK) {
+                    $imgSlot = handle_file_upload($_FILES[$slotKey], 'projects');
+                    if ($imgSlot) {
+                        $pdo->prepare("INSERT INTO project_images (project_id, image_path, sort_order) VALUES (?, ?, ?)")
+                            ->execute([$newProjId, $imgSlot, $slot - 1]);
                     }
                 }
             }
@@ -144,32 +136,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $isFeatured, $status, $sortOrder, $id
             ]);
 
-            // Handle image_2 (Slide 2)
-            if ($id > 0 && isset($_FILES['image_2']) && $_FILES['image_2']['error'] === UPLOAD_ERR_OK) {
-                $img2 = handle_file_upload($_FILES['image_2'], 'projects');
-                if ($img2) {
-                    $img2Id = (int)($_POST['image_2_id'] ?? 0);
-                    if ($img2Id > 0) {
-                        $oldImg = $pdo->query("SELECT image_path FROM project_images WHERE id = $img2Id")->fetchColumn();
-                        if ($oldImg && file_exists(__DIR__ . '/../uploads/projects/' . $oldImg)) {
-                            @unlink(__DIR__ . '/../uploads/projects/' . $oldImg);
+            // Handle image_2, image_3, image_4, image_5 (Slide 2 sampai 5)
+            for ($slot = 2; $slot <= 5; $slot++) {
+                $slotKey = "image_$slot";
+                $idKey   = "image_{$slot}_id";
+                if ($id > 0 && isset($_FILES[$slotKey]) && $_FILES[$slotKey]['error'] === UPLOAD_ERR_OK) {
+                    $imgSlot = handle_file_upload($_FILES[$slotKey], 'projects');
+                    if ($imgSlot) {
+                        $slotImgId = (int)($_POST[$idKey] ?? 0);
+                        if ($slotImgId > 0) {
+                            $oldImg = $pdo->query("SELECT image_path FROM project_images WHERE id = $slotImgId")->fetchColumn();
+                            if ($oldImg && file_exists(__DIR__ . '/../uploads/projects/' . $oldImg)) {
+                                @unlink(__DIR__ . '/../uploads/projects/' . $oldImg);
+                            }
+                            $pdo->prepare("UPDATE project_images SET image_path = ? WHERE id = ?")->execute([$imgSlot, $slotImgId]);
+                        } else {
+                            $pdo->prepare("INSERT INTO project_images (project_id, image_path, sort_order) VALUES (?, ?, ?)")
+                                ->execute([$id, $imgSlot, $slot - 1]);
                         }
-                        $pdo->prepare("UPDATE project_images SET image_path = ? WHERE id = ?")->execute([$img2, $img2Id]);
-                    } else {
-                        $pdo->prepare("INSERT INTO project_images (project_id, image_path, sort_order) VALUES (?, ?, 1)")
-                            ->execute([$id, $img2]);
-                    }
-                }
-            }
-
-            // Handle additional gallery photos upload
-            if ($id > 0 && !empty($_FILES['gallery_files'])) {
-                $galleryUploads = handle_multiple_file_uploads($_FILES['gallery_files'], 'projects');
-                if (!empty($galleryUploads)) {
-                    $maxOrder = (int)$pdo->query("SELECT COALESCE(MAX(sort_order), 0) FROM project_images WHERE project_id = $id")->fetchColumn();
-                    $insGal = $pdo->prepare("INSERT INTO project_images (project_id, image_path, sort_order) VALUES (?, ?, ?)");
-                    foreach ($galleryUploads as $idx => $gImg) {
-                        $insGal->execute([$id, $gImg, $maxOrder + $idx + 1]);
                     }
                 }
             }
@@ -472,32 +456,118 @@ require_once __DIR__ . '/includes/admin_header.php';
                             <label class="form-label text-muted small fw-semibold">Tautan Repositori / File</label>
                             <input type="text" name="repository_url" class="form-control form-folio" placeholder="https://github.com/...">
                         </div>
-                        <!-- 2 Foto Proyek (Slide Gambar) -->
+                        <!-- 5 Foto Proyek (Slide Gambar hingga 5 Foto) -->
                         <div class="col-12">
                             <div class="p-3 bg-light rounded-3 border">
-                                <label class="form-label text-dark fw-bold mb-1">
-                                    <i class="bi bi-images text-primary-olive me-1"></i> Foto Proyek (Slide Gambar)
-                                </label>
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <label class="form-label text-dark fw-bold mb-0">
+                                        <i class="bi bi-images text-primary-olive me-1"></i> Foto Proyek (Slide Gambar hingga 5 Foto)
+                                    </label>
+                                    <span class="badge rounded-pill bg-white text-secondary border px-2.5 py-1" style="font-size:0.72rem;">
+                                        Maks. 5 Foto
+                                    </span>
+                                </div>
                                 <p class="text-muted small mb-3" style="font-size: 0.78rem;">
-                                    Tambahkan hingga 2 foto. Jika mengunggah 2 foto, kartu proyek dan modal pratinjau dapat di-slide ke kiri dan kanan.
+                                    Tambahkan hingga 5 foto untuk proyek ini. Jika memiliki 2 atau lebih foto, kartu proyek dan modal pratinjau dapat di-slide ke kiri dan kanan.
                                 </p>
-                                <div class="row g-3">
-                                    <div class="col-md-6">
-                                        <label class="form-label text-muted small fw-semibold">
-                                            <span class="badge bg-primary-olive text-white me-1">1</span> Gambar 1 (Foto Utama / Slide 1) *
-                                        </label>
-                                        <input type="file" name="thumbnail_file" class="form-control form-folio" accept="image/*" onchange="previewImgLocal(this, 'addImg1Preview', 'addImg1Wrap')">
-                                        <div id="addImg1Wrap" class="mt-2 text-center d-none p-1 bg-white rounded border">
-                                            <img id="addImg1Preview" src="" class="rounded" style="max-height: 80px; max-width: 100%; object-fit: contain;">
+                                <div class="row g-2.5">
+                                    <!-- Slot 1: Foto Utama / Slide 1 -->
+                                    <div class="col-md-4 col-sm-6">
+                                        <div class="p-2.5 bg-white rounded-2 border h-100 d-flex flex-column justify-content-between shadow-sm">
+                                            <div>
+                                                <div class="d-flex justify-content-between align-items-center mb-1.5">
+                                                    <span class="small fw-semibold text-dark">
+                                                        <span class="badge bg-primary-olive text-white me-1">1</span> Gambar 1 (Utama) *
+                                                    </span>
+                                                </div>
+                                                <div class="mb-2 text-center p-1 bg-light rounded border" style="height: 85px; display: flex; align-items: center; justify-content: center;">
+                                                    <img id="addImg1Preview" src="" class="rounded d-none" style="max-height: 75px; max-width: 100%; object-fit: contain;">
+                                                    <span id="addImg1Notice" class="text-muted small fst-italic" style="font-size:0.72rem;">Foto Sampul Utama</span>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <input type="file" name="thumbnail_file" class="form-control form-control-sm" accept="image/*" onchange="previewImgLocal(this, 'addImg1Preview', null, 'addImg1Notice')">
+                                            </div>
                                         </div>
                                     </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label text-muted small fw-semibold">
-                                            <span class="badge bg-secondary text-white me-1">2</span> Gambar 2 (Slide 2 / Tambahan)
-                                        </label>
-                                        <input type="file" name="image_2" class="form-control form-folio" accept="image/*" onchange="previewImgLocal(this, 'addImg2Preview', 'addImg2Wrap')">
-                                        <div id="addImg2Wrap" class="mt-2 text-center d-none p-1 bg-white rounded border">
-                                            <img id="addImg2Preview" src="" class="rounded" style="max-height: 80px; max-width: 100%; object-fit: contain;">
+
+                                    <!-- Slot 2 -->
+                                    <div class="col-md-4 col-sm-6">
+                                        <div class="p-2.5 bg-white rounded-2 border h-100 d-flex flex-column justify-content-between shadow-sm">
+                                            <div>
+                                                <div class="d-flex justify-content-between align-items-center mb-1.5">
+                                                    <span class="small fw-semibold text-dark">
+                                                        <span class="badge bg-secondary text-white me-1">2</span> Gambar 2
+                                                    </span>
+                                                </div>
+                                                <div class="mb-2 text-center p-1 bg-light rounded border" style="height: 85px; display: flex; align-items: center; justify-content: center;">
+                                                    <img id="addImg2Preview" src="" class="rounded d-none" style="max-height: 75px; max-width: 100%; object-fit: contain;">
+                                                    <span id="addImg2Notice" class="text-muted small fst-italic" style="font-size:0.72rem;">Belum dipilih</span>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <input type="file" name="image_2" class="form-control form-control-sm" accept="image/*" onchange="previewImgLocal(this, 'addImg2Preview', null, 'addImg2Notice')">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Slot 3 -->
+                                    <div class="col-md-4 col-sm-6">
+                                        <div class="p-2.5 bg-white rounded-2 border h-100 d-flex flex-column justify-content-between shadow-sm">
+                                            <div>
+                                                <div class="d-flex justify-content-between align-items-center mb-1.5">
+                                                    <span class="small fw-semibold text-dark">
+                                                        <span class="badge bg-secondary text-white me-1">3</span> Gambar 3
+                                                    </span>
+                                                </div>
+                                                <div class="mb-2 text-center p-1 bg-light rounded border" style="height: 85px; display: flex; align-items: center; justify-content: center;">
+                                                    <img id="addImg3Preview" src="" class="rounded d-none" style="max-height: 75px; max-width: 100%; object-fit: contain;">
+                                                    <span id="addImg3Notice" class="text-muted small fst-italic" style="font-size:0.72rem;">Belum dipilih</span>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <input type="file" name="image_3" class="form-control form-control-sm" accept="image/*" onchange="previewImgLocal(this, 'addImg3Preview', null, 'addImg3Notice')">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Slot 4 -->
+                                    <div class="col-md-6 col-sm-6">
+                                        <div class="p-2.5 bg-white rounded-2 border h-100 d-flex flex-column justify-content-between shadow-sm">
+                                            <div>
+                                                <div class="d-flex justify-content-between align-items-center mb-1.5">
+                                                    <span class="small fw-semibold text-dark">
+                                                        <span class="badge bg-secondary text-white me-1">4</span> Gambar 4
+                                                    </span>
+                                                </div>
+                                                <div class="mb-2 text-center p-1 bg-light rounded border" style="height: 85px; display: flex; align-items: center; justify-content: center;">
+                                                    <img id="addImg4Preview" src="" class="rounded d-none" style="max-height: 75px; max-width: 100%; object-fit: contain;">
+                                                    <span id="addImg4Notice" class="text-muted small fst-italic" style="font-size:0.72rem;">Belum dipilih</span>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <input type="file" name="image_4" class="form-control form-control-sm" accept="image/*" onchange="previewImgLocal(this, 'addImg4Preview', null, 'addImg4Notice')">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Slot 5 -->
+                                    <div class="col-md-6 col-sm-6">
+                                        <div class="p-2.5 bg-white rounded-2 border h-100 d-flex flex-column justify-content-between shadow-sm">
+                                            <div>
+                                                <div class="d-flex justify-content-between align-items-center mb-1.5">
+                                                    <span class="small fw-semibold text-dark">
+                                                        <span class="badge bg-secondary text-white me-1">5</span> Gambar 5
+                                                    </span>
+                                                </div>
+                                                <div class="mb-2 text-center p-1 bg-light rounded border" style="height: 85px; display: flex; align-items: center; justify-content: center;">
+                                                    <img id="addImg5Preview" src="" class="rounded d-none" style="max-height: 75px; max-width: 100%; object-fit: contain;">
+                                                    <span id="addImg5Notice" class="text-muted small fst-italic" style="font-size:0.72rem;">Belum dipilih</span>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <input type="file" name="image_5" class="form-control form-control-sm" accept="image/*" onchange="previewImgLocal(this, 'addImg5Preview', null, 'addImg5Notice')">
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -644,55 +714,139 @@ require_once __DIR__ . '/includes/admin_header.php';
                             <label class="form-label text-muted small fw-semibold">Tautan Repositori</label>
                             <input type="text" name="repository_url" id="editRepoUrl" class="form-control form-folio">
                         </div>
-                        <!-- 2 Foto Proyek (Slide Gambar) -->
+                        <!-- 5 Foto Proyek (Slide Gambar hingga 5 Foto) -->
                         <div class="col-12">
                             <div class="p-3 bg-light rounded-3 border">
-                                <label class="form-label text-dark fw-bold mb-1">
-                                    <i class="bi bi-images text-primary-olive me-1"></i> Foto Proyek (Slide Gambar)
-                                </label>
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <label class="form-label text-dark fw-bold mb-0">
+                                        <i class="bi bi-images text-primary-olive me-1"></i> Foto Proyek (Slide Gambar hingga 5 Foto)
+                                    </label>
+                                    <span class="badge rounded-pill bg-white text-secondary border px-2.5 py-1" style="font-size:0.72rem;">
+                                        Maks. 5 Foto
+                                    </span>
+                                </div>
                                 <p class="text-muted small mb-3" style="font-size: 0.78rem;">
-                                    Atur Gambar 1 dan Gambar 2 untuk proyek ini. Jika memiliki 2 gambar, foto dapat di-slide ke kiri dan kanan pada kartu proyek dan detail pratinjau.
+                                    Atur hingga 5 foto untuk proyek ini. Jika memiliki 2 atau lebih foto, foto dapat di-slide ke kiri dan kanan pada kartu proyek dan detail pratinjau.
                                 </p>
-                                <div class="row g-3">
-                                    <!-- Slot Gambar 1 (Slide 1 / Utama) -->
-                                    <div class="col-md-6">
-                                        <div class="p-2.5 bg-white rounded-2 border h-100">
-                                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                                <label class="form-label text-muted small fw-semibold mb-0">
-                                                    <span class="badge bg-primary-olive text-white me-1">1</span> Gambar 1 (Slide 1 / Utama)
-                                                </label>
+                                <div class="row g-2.5">
+                                    <!-- Slot 1: Foto Utama / Slide 1 -->
+                                    <div class="col-md-4 col-sm-6">
+                                        <div class="p-2.5 bg-white rounded-2 border h-100 d-flex flex-column justify-content-between shadow-sm">
+                                            <div>
+                                                <div class="d-flex justify-content-between align-items-center mb-1.5">
+                                                    <span class="small fw-semibold text-dark">
+                                                        <span class="badge bg-primary-olive text-white me-1">1</span> Gambar 1 (Utama)
+                                                    </span>
+                                                </div>
+                                                <div class="mb-2 text-center p-1 bg-light rounded border" style="height: 85px; display: flex; align-items: center; justify-content: center;">
+                                                    <img id="editImg1Preview" src="" class="rounded" style="max-height: 75px; max-width: 100%; object-fit: contain;">
+                                                </div>
                                             </div>
-                                            <!-- Preview Slot 1 -->
-                                            <div class="mb-2 text-center p-1 bg-light rounded border" style="min-height: 90px; display: flex; align-items: center; justify-content: center;">
-                                                <img id="editImg1Preview" src="" class="rounded" style="max-height: 85px; max-width: 100%; object-fit: contain;">
+                                            <div>
+                                                <label class="form-label text-muted small mb-1" style="font-size:0.7rem;">Ganti Foto Utama:</label>
+                                                <input type="file" name="thumbnail_file" id="editImg1File" class="form-control form-control-sm" accept="image/*" onchange="previewImgLocal(this, 'editImg1Preview')">
+                                                <div class="form-text text-muted text-truncate" id="editThumbInfo" style="font-size:0.68rem;"></div>
                                             </div>
-                                            <label class="form-label text-muted small mb-1" style="font-size:0.75rem;">Ganti Gambar 1:</label>
-                                            <input type="file" name="thumbnail_file" id="editImg1File" class="form-control form-folio form-control-sm" accept="image/*" onchange="previewImgLocal(this, 'editImg1Preview')">
-                                            <div class="form-text text-muted" id="editThumbInfo" style="font-size:0.7rem;"></div>
                                         </div>
                                     </div>
 
-                                    <!-- Slot Gambar 2 (Slide 2) -->
-                                    <div class="col-md-6">
-                                        <div class="p-2.5 bg-white rounded-2 border h-100">
-                                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                                <label class="form-label text-muted small fw-semibold mb-0">
-                                                    <span class="badge bg-secondary text-white me-1">2</span> Gambar 2 (Slide 2)
-                                                </label>
-                                                <!-- Delete button for Image 2 -->
-                                                <button type="button" class="btn btn-outline-danger btn-sm py-0 px-2 d-none" id="editImg2DeleteBtn" style="font-size:0.72rem;" onclick="deleteImage2()">
-                                                    <i class="bi bi-trash-fill me-1"></i>Hapus Gambar 2
-                                                </button>
+                                    <!-- Slot 2 -->
+                                    <div class="col-md-4 col-sm-6">
+                                        <div class="p-2.5 bg-white rounded-2 border h-100 d-flex flex-column justify-content-between shadow-sm">
+                                            <div>
+                                                <div class="d-flex justify-content-between align-items-center mb-1.5">
+                                                    <span class="small fw-semibold text-dark">
+                                                        <span class="badge bg-secondary text-white me-1">2</span> Gambar 2
+                                                    </span>
+                                                    <button type="button" class="btn btn-outline-danger btn-sm p-0 px-1.5 d-none" id="editImg2DeleteBtn" style="font-size:0.68rem;" onclick="deleteSlotImage(2)">
+                                                        <i class="bi bi-trash-fill me-1"></i>Hapus
+                                                    </button>
+                                                </div>
+                                                <div class="mb-2 text-center p-1 bg-light rounded border position-relative" style="height: 85px; display: flex; align-items: center; justify-content: center;">
+                                                    <img id="editImg2Preview" src="" class="rounded d-none" style="max-height: 75px; max-width: 100%; object-fit: contain;">
+                                                    <span id="editImg2Empty" class="text-muted small fst-italic" style="font-size:0.72rem;">Belum ada</span>
+                                                </div>
                                             </div>
-                                            <!-- Preview Slot 2 -->
-                                            <div class="mb-2 text-center p-1 bg-light rounded border position-relative" style="min-height: 90px; display: flex; align-items: center; justify-content: center;">
-                                                <img id="editImg2Preview" src="" class="rounded d-none" style="max-height: 85px; max-width: 100%; object-fit: contain;">
-                                                <span id="editImg2EmptyNotice" class="text-muted small fst-italic" style="font-size:0.75rem;">Belum ada Gambar 2</span>
+                                            <div>
+                                                <label class="form-label text-muted small mb-1" style="font-size:0.7rem;">Unggah / Ganti:</label>
+                                                <input type="file" name="image_2" id="editImg2File" class="form-control form-control-sm" accept="image/*" onchange="previewImgLocal(this, 'editImg2Preview', null, 'editImg2Empty')">
+                                                <input type="hidden" name="image_2_id" id="editImg2Id" value="">
                                             </div>
-                                            <label class="form-label text-muted small mb-1" style="font-size:0.75rem;">Unggah / Ganti Gambar 2:</label>
-                                            <input type="file" name="image_2" id="editImg2File" class="form-control form-folio form-control-sm" accept="image/*" onchange="previewImgLocal(this, 'editImg2Preview', null, 'editImg2EmptyNotice')">
-                                            <input type="hidden" name="image_2_id" id="editImg2Id" value="">
-                                            <div class="form-text text-muted" style="font-size:0.7rem;">Pilih foto baru untuk mengisi atau mengganti Gambar 2.</div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Slot 3 -->
+                                    <div class="col-md-4 col-sm-6">
+                                        <div class="p-2.5 bg-white rounded-2 border h-100 d-flex flex-column justify-content-between shadow-sm">
+                                            <div>
+                                                <div class="d-flex justify-content-between align-items-center mb-1.5">
+                                                    <span class="small fw-semibold text-dark">
+                                                        <span class="badge bg-secondary text-white me-1">3</span> Gambar 3
+                                                    </span>
+                                                    <button type="button" class="btn btn-outline-danger btn-sm p-0 px-1.5 d-none" id="editImg3DeleteBtn" style="font-size:0.68rem;" onclick="deleteSlotImage(3)">
+                                                        <i class="bi bi-trash-fill me-1"></i>Hapus
+                                                    </button>
+                                                </div>
+                                                <div class="mb-2 text-center p-1 bg-light rounded border position-relative" style="height: 85px; display: flex; align-items: center; justify-content: center;">
+                                                    <img id="editImg3Preview" src="" class="rounded d-none" style="max-height: 75px; max-width: 100%; object-fit: contain;">
+                                                    <span id="editImg3Empty" class="text-muted small fst-italic" style="font-size:0.72rem;">Belum ada</span>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label class="form-label text-muted small mb-1" style="font-size:0.7rem;">Unggah / Ganti:</label>
+                                                <input type="file" name="image_3" id="editImg3File" class="form-control form-control-sm" accept="image/*" onchange="previewImgLocal(this, 'editImg3Preview', null, 'editImg3Empty')">
+                                                <input type="hidden" name="image_3_id" id="editImg3Id" value="">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Slot 4 -->
+                                    <div class="col-md-6 col-sm-6">
+                                        <div class="p-2.5 bg-white rounded-2 border h-100 d-flex flex-column justify-content-between shadow-sm">
+                                            <div>
+                                                <div class="d-flex justify-content-between align-items-center mb-1.5">
+                                                    <span class="small fw-semibold text-dark">
+                                                        <span class="badge bg-secondary text-white me-1">4</span> Gambar 4
+                                                    </span>
+                                                    <button type="button" class="btn btn-outline-danger btn-sm p-0 px-1.5 d-none" id="editImg4DeleteBtn" style="font-size:0.68rem;" onclick="deleteSlotImage(4)">
+                                                        <i class="bi bi-trash-fill me-1"></i>Hapus
+                                                    </button>
+                                                </div>
+                                                <div class="mb-2 text-center p-1 bg-light rounded border position-relative" style="height: 85px; display: flex; align-items: center; justify-content: center;">
+                                                    <img id="editImg4Preview" src="" class="rounded d-none" style="max-height: 75px; max-width: 100%; object-fit: contain;">
+                                                    <span id="editImg4Empty" class="text-muted small fst-italic" style="font-size:0.72rem;">Belum ada</span>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label class="form-label text-muted small mb-1" style="font-size:0.7rem;">Unggah / Ganti:</label>
+                                                <input type="file" name="image_4" id="editImg4File" class="form-control form-control-sm" accept="image/*" onchange="previewImgLocal(this, 'editImg4Preview', null, 'editImg4Empty')">
+                                                <input type="hidden" name="image_4_id" id="editImg4Id" value="">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Slot 5 -->
+                                    <div class="col-md-6 col-sm-6">
+                                        <div class="p-2.5 bg-white rounded-2 border h-100 d-flex flex-column justify-content-between shadow-sm">
+                                            <div>
+                                                <div class="d-flex justify-content-between align-items-center mb-1.5">
+                                                    <span class="small fw-semibold text-dark">
+                                                        <span class="badge bg-secondary text-white me-1">5</span> Gambar 5
+                                                    </span>
+                                                    <button type="button" class="btn btn-outline-danger btn-sm p-0 px-1.5 d-none" id="editImg5DeleteBtn" style="font-size:0.68rem;" onclick="deleteSlotImage(5)">
+                                                        <i class="bi bi-trash-fill me-1"></i>Hapus
+                                                    </button>
+                                                </div>
+                                                <div class="mb-2 text-center p-1 bg-light rounded border position-relative" style="height: 85px; display: flex; align-items: center; justify-content: center;">
+                                                    <img id="editImg5Preview" src="" class="rounded d-none" style="max-height: 75px; max-width: 100%; object-fit: contain;">
+                                                    <span id="editImg5Empty" class="text-muted small fst-italic" style="font-size:0.72rem;">Belum ada</span>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label class="form-label text-muted small mb-1" style="font-size:0.7rem;">Unggah / Ganti:</label>
+                                                <input type="file" name="image_5" id="editImg5File" class="form-control form-control-sm" accept="image/*" onchange="previewImgLocal(this, 'editImg5Preview', null, 'editImg5Empty')">
+                                                <input type="hidden" name="image_5_id" id="editImg5Id" value="">
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -764,11 +918,12 @@ function previewImgLocal(input, previewImgId, wrapId, hideNoticeId) {
     }
 }
 
-function deleteImage2() {
-    const imgId = document.getElementById('editImg2Id').value;
+function deleteSlotImage(slot) {
+    const idInput = document.getElementById('editImg' + slot + 'Id');
+    const imgId = idInput ? idInput.value : '';
     const projId = document.getElementById('editProjId').value;
     if (!imgId) return;
-    if (!confirm('Hapus Gambar 2 dari proyek ini?')) return;
+    if (!confirm('Hapus Gambar ' + slot + ' dari proyek ini?')) return;
 
     const formData = new FormData();
     formData.append('csrf_token', '<?= $csrf_token ?>');
@@ -786,12 +941,12 @@ function deleteImage2() {
     .then(res => res.json())
     .then(data => {
         if (data.status === 'success') {
-            document.getElementById('editImg2Preview').src = '';
-            document.getElementById('editImg2Preview').classList.add('d-none');
-            document.getElementById('editImg2EmptyNotice').classList.remove('d-none');
-            document.getElementById('editImg2DeleteBtn').classList.add('d-none');
-            document.getElementById('editImg2Id').value = '';
-            document.getElementById('editImg2File').value = '';
+            document.getElementById('editImg' + slot + 'Preview').src = '';
+            document.getElementById('editImg' + slot + 'Preview').classList.add('d-none');
+            document.getElementById('editImg' + slot + 'Empty').classList.remove('d-none');
+            document.getElementById('editImg' + slot + 'DeleteBtn').classList.add('d-none');
+            idInput.value = '';
+            document.getElementById('editImg' + slot + 'File').value = '';
             if (currentEditingProject && currentEditingProject.gallery) {
                 currentEditingProject.gallery = currentEditingProject.gallery.filter(g => g.id != imgId);
             }
@@ -872,30 +1027,33 @@ function openEditProject(p) {
     const img1Prev = document.getElementById('editImg1Preview');
     const thumbPath = p.thumbnail && p.thumbnail !== 'placeholder.png' ? '../uploads/projects/' + p.thumbnail : '../assets/img/placeholder.png';
     img1Prev.src = thumbPath;
-
-    // Reset input file Gambar 1 & Gambar 2
     document.getElementById('editImg1File').value = '';
-    document.getElementById('editImg2File').value = '';
 
-    // Set Preview Gambar 2 (Slide 2)
-    const img2Prev = document.getElementById('editImg2Preview');
-    const img2Notice = document.getElementById('editImg2EmptyNotice');
-    const img2Del = document.getElementById('editImg2DeleteBtn');
-    const img2IdInput = document.getElementById('editImg2Id');
+    // Set Preview Gambar 2..5 (Slide 2 sampai 5)
+    for (let slot = 2; slot <= 5; slot++) {
+        const idx = slot - 2;
+        const prevEl = document.getElementById('editImg' + slot + 'Preview');
+        const emptyEl = document.getElementById('editImg' + slot + 'Empty');
+        const delBtn = document.getElementById('editImg' + slot + 'DeleteBtn');
+        const idInput = document.getElementById('editImg' + slot + 'Id');
+        const fileInput = document.getElementById('editImg' + slot + 'File');
 
-    if (p.gallery && p.gallery.length > 0) {
-        const firstGal = p.gallery[0];
-        img2Prev.src = firstGal.url;
-        img2Prev.classList.remove('d-none');
-        img2Notice.classList.add('d-none');
-        img2Del.classList.remove('d-none');
-        img2IdInput.value = firstGal.id;
-    } else {
-        img2Prev.src = '';
-        img2Prev.classList.add('d-none');
-        img2Notice.classList.remove('d-none');
-        img2Del.classList.add('d-none');
-        img2IdInput.value = '';
+        if (fileInput) fileInput.value = '';
+
+        if (p.gallery && p.gallery.length > idx) {
+            const item = p.gallery[idx];
+            prevEl.src = item.url;
+            prevEl.classList.remove('d-none');
+            emptyEl.classList.add('d-none');
+            delBtn.classList.remove('d-none');
+            idInput.value = item.id;
+        } else {
+            prevEl.src = '';
+            prevEl.classList.add('d-none');
+            emptyEl.classList.remove('d-none');
+            delBtn.classList.add('d-none');
+            idInput.value = '';
+        }
     }
 
     // Set dropdown kategori berdasarkan category_id (FK)
