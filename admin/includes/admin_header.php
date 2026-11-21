@@ -124,7 +124,7 @@ foreach ($navGroups as $group => $pages) {
                     <i class="bi bi-person-badge"></i><span>Data Pribadi</span>
                 </a>
                 <a href="experiences.php" class="admin-nav-link sub <?= $currentPage === 'experiences' ? 'active' : '' ?>">
-                    <i class="bi bi-briefcase"></i><span>Pengalaman Kerja</span>
+                    <i class="bi bi-briefcase"></i><span>Pengalaman</span>
                 </a>
                 <a href="education.php" class="admin-nav-link sub <?= $currentPage === 'education' ? 'active' : '' ?>">
                     <i class="bi bi-mortarboard"></i><span>Pendidikan</span>

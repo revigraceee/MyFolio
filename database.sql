@@ -6,6 +6,7 @@ USE `db_myfolio`;
 DROP TABLE IF EXISTS `social_links`;
 DROP TABLE IF EXISTS `education`;
 DROP TABLE IF EXISTS `experiences`;
+DROP TABLE IF EXISTS `experience_types`;
 DROP TABLE IF EXISTS `project_images`;
 DROP TABLE IF EXISTS `projects`;
 DROP TABLE IF EXISTS `project_categories`;
@@ -106,10 +107,27 @@ CREATE TABLE `skills` (
   `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 4. Table experiences
+-- 7. Table experience_types (Tipe / Kategori Pengalaman Dinamis)
+CREATE TABLE `experience_types` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `type_name` VARCHAR(100) NOT NULL,
+  `sort_order` TINYINT UNSIGNED NOT NULL DEFAULT 0,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_type_name` (`type_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+INSERT INTO `experience_types` (`id`, `type_name`, `sort_order`) VALUES
+(1, 'Work', 1),
+(2, 'Organization', 2),
+(3, 'Committee', 3),
+(4, 'Competition', 4),
+(5, 'Volunteer', 5);
+
+-- 8. Table experiences
 CREATE TABLE `experiences` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
-  `type` VARCHAR(50) NOT NULL,
+  `type` VARCHAR(100) NOT NULL,
   `title` VARCHAR(150) NOT NULL,
   `organization` VARCHAR(150) NOT NULL,
   `period_start` DATE DEFAULT NULL,

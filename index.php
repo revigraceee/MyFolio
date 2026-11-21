@@ -120,8 +120,13 @@ foreach ($projects as $pj) {
     }
 }
 
-// 3. Fetch Experiences (ordered by sort_order ASC, period_start DESC)
-$experiences = $pdo->query("SELECT * FROM experiences ORDER BY sort_order ASC, period_start DESC")->fetchAll();
+// 3. Fetch Experiences (ordered by type sort_order ASC, experiences.sort_order ASC, period_start DESC)
+$experiences = $pdo->query("
+    SELECT e.*
+    FROM experiences e
+    LEFT JOIN experience_types et ON et.type_name = e.type
+    ORDER BY COALESCE(et.sort_order, 999) ASC, e.sort_order ASC, e.period_start DESC
+")->fetchAll();
 
 // 4. Fetch Education (ordered by sort_order ASC, period_start DESC)
 $educations = $pdo->query("SELECT * FROM education ORDER BY sort_order ASC, period_start DESC")->fetchAll();
