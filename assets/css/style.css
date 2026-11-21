@@ -538,3 +538,102 @@ section {
 .detail-thumb-item:hover, .lb-strip-thumb:hover {
     opacity: 1 !important;
 }
+
+/* Card Slider for Projects with 2 Images */
+.card-slider-track {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+.card-slider-img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease;
+}
+
+.card-slider-img.active {
+    opacity: 1;
+    visibility: visible;
+    position: relative;
+}
+
+.card-slide-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(24, 30, 16, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 5;
+    opacity: 0;
+    backdrop-filter: blur(4px);
+}
+
+.project-card:hover .card-slide-btn {
+    opacity: 1;
+}
+
+.card-slide-btn:hover {
+    background: var(--color-primary-olive);
+    color: #ffffff;
+    transform: translateY(-50%) scale(1.12);
+}
+
+.card-slide-prev {
+    left: 8px;
+}
+
+.card-slide-next {
+    right: 8px;
+}
+
+.card-slide-dots {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 6px;
+    z-index: 5;
+    background: rgba(15, 20, 10, 0.6);
+    padding: 3px 8px;
+    border-radius: 12px;
+    backdrop-filter: blur(4px);
+}
+
+.card-slide-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.45);
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.card-slide-dot.active {
+    background: var(--color-soft-olive, #A2B964);
+    transform: scale(1.3);
+    box-shadow: 0 0 6px rgba(255, 255, 255, 0.6);
+}
+
+@media (hover: none) {
+    .card-slide-btn {
+        opacity: 0.85;
+    }
+}

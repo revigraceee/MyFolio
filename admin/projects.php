@@ -66,13 +66,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ]);
             $newProjId = (int)$pdo->lastInsertId();
 
-            // Handle multiple gallery photos
+            // Handle image_2 (Slide 2)
+            if ($newProjId > 0 && isset($_FILES['image_2']) && $_FILES['image_2']['error'] === UPLOAD_ERR_OK) {
+                $img2 = handle_file_upload($_FILES['image_2'], 'projects');
+                if ($img2) {
+                    $pdo->prepare("INSERT INTO project_images (project_id, image_path, sort_order) VALUES (?, ?, 1)")
+                        ->execute([$newProjId, $img2]);
+                }
+            }
+
+            // Handle optional multiple gallery photos
             if ($newProjId > 0 && !empty($_FILES['gallery_files'])) {
                 $galleryUploads = handle_multiple_file_uploads($_FILES['gallery_files'], 'projects');
                 if (!empty($galleryUploads)) {
                     $insGal = $pdo->prepare("INSERT INTO project_images (project_id, image_path, sort_order) VALUES (?, ?, ?)");
                     foreach ($galleryUploads as $idx => $gImg) {
-                        $insGal->execute([$newProjId, $gImg, $idx + 1]);
+                        $insGal->execute([$newProjId, $gImg, $idx + 2]);
                     }
                 }
             }
@@ -134,6 +143,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $thumbnail, $projUrl, $repoUrl,
                 $isFeatured, $status, $sortOrder, $id
             ]);
+
+            // Handle image_2 (Slide 2)
+            if ($id > 0 && isset($_FILES['image_2']) && $_FILES['image_2']['error'] === UPLOAD_ERR_OK) {
+                $img2 = handle_file_upload($_FILES['image_2'], 'projects');
+                if ($img2) {
+                    $img2Id = (int)($_POST['image_2_id'] ?? 0);
+                    if ($img2Id > 0) {
+                        $oldImg = $pdo->query("SELECT image_path FROM project_images WHERE id = $img2Id")->fetchColumn();
+                        if ($oldImg && file_exists(__DIR__ . '/../uploads/projects/' . $oldImg)) {
+                            @unlink(__DIR__ . '/../uploads/projects/' . $oldImg);
+                        }
+                        $pdo->prepare("UPDATE project_images SET image_path = ? WHERE id = ?")->execute([$img2, $img2Id]);
+                    } else {
+                        $pdo->prepare("INSERT INTO project_images (project_id, image_path, sort_order) VALUES (?, ?, 1)")
+                            ->execute([$id, $img2]);
+                    }
+                }
+            }
 
             // Handle additional gallery photos upload
             if ($id > 0 && !empty($_FILES['gallery_files'])) {
@@ -445,17 +472,36 @@ require_once __DIR__ . '/includes/admin_header.php';
                             <label class="form-label text-muted small fw-semibold">Tautan Repositori / File</label>
                             <input type="text" name="repository_url" class="form-control form-folio" placeholder="https://github.com/...">
                         </div>
-                        <!-- Thumbnail -->
-                        <div class="col-md-6">
-                            <label class="form-label text-muted small fw-semibold">Foto Sampul (Thumbnail Utama)</label>
-                            <input type="file" name="thumbnail_file" class="form-control form-folio" accept="image/*">
-                            <div class="form-text text-muted" style="font-size: 0.72rem;">Foto utama yang tampil pada kartu proyek.</div>
-                        </div>
-                        <!-- Multiple Gallery Photos -->
-                        <div class="col-md-6">
-                            <label class="form-label text-muted small fw-semibold">Foto Galeri Tambahan (Bisa Upload Banyak)</label>
-                            <input type="file" name="gallery_files[]" class="form-control form-folio" accept="image/*" multiple>
-                            <div class="form-text text-muted" style="font-size: 0.72rem;">Pilih beberapa foto untuk fitur slide galeri (tekan Ctrl/Shift saat memilih).</div>
+                        <!-- 2 Foto Proyek (Slide Gambar) -->
+                        <div class="col-12">
+                            <div class="p-3 bg-light rounded-3 border">
+                                <label class="form-label text-dark fw-bold mb-1">
+                                    <i class="bi bi-images text-primary-olive me-1"></i> Foto Proyek (Slide Gambar)
+                                </label>
+                                <p class="text-muted small mb-3" style="font-size: 0.78rem;">
+                                    Tambahkan hingga 2 foto. Jika mengunggah 2 foto, kartu proyek dan modal pratinjau dapat di-slide ke kiri dan kanan.
+                                </p>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label text-muted small fw-semibold">
+                                            <span class="badge bg-primary-olive text-white me-1">1</span> Gambar 1 (Foto Utama / Slide 1) *
+                                        </label>
+                                        <input type="file" name="thumbnail_file" class="form-control form-folio" accept="image/*" onchange="previewImgLocal(this, 'addImg1Preview', 'addImg1Wrap')">
+                                        <div id="addImg1Wrap" class="mt-2 text-center d-none p-1 bg-white rounded border">
+                                            <img id="addImg1Preview" src="" class="rounded" style="max-height: 80px; max-width: 100%; object-fit: contain;">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label text-muted small fw-semibold">
+                                            <span class="badge bg-secondary text-white me-1">2</span> Gambar 2 (Slide 2 / Tambahan)
+                                        </label>
+                                        <input type="file" name="image_2" class="form-control form-folio" accept="image/*" onchange="previewImgLocal(this, 'addImg2Preview', 'addImg2Wrap')">
+                                        <div id="addImg2Wrap" class="mt-2 text-center d-none p-1 bg-white rounded border">
+                                            <img id="addImg2Preview" src="" class="rounded" style="max-height: 80px; max-width: 100%; object-fit: contain;">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <!-- Status & Urutan -->
                         <div class="col-md-3">
@@ -598,23 +644,58 @@ require_once __DIR__ . '/includes/admin_header.php';
                             <label class="form-label text-muted small fw-semibold">Tautan Repositori</label>
                             <input type="text" name="repository_url" id="editRepoUrl" class="form-control form-folio">
                         </div>
-                        <!-- Thumbnail -->
-                        <div class="col-md-6">
-                            <label class="form-label text-muted small fw-semibold">Ganti Foto Sampul / Thumbnail Utama</label>
-                            <input type="file" name="thumbnail_file" class="form-control form-folio" accept="image/*">
-                            <div class="form-text text-muted" id="editThumbInfo"></div>
-                        </div>
-                        <!-- Multiple Gallery Photos -->
-                        <div class="col-md-6">
-                            <label class="form-label text-muted small fw-semibold">Tambah Foto Galeri Baru (Bisa Pilih Banyak)</label>
-                            <input type="file" name="gallery_files[]" class="form-control form-folio" accept="image/*" multiple>
-                            <div class="form-text text-muted" style="font-size: 0.72rem;">Pilih beberapa foto untuk ditambahkan ke galeri slide.</div>
-                        </div>
-                        <!-- Existing Gallery Container -->
-                        <div class="col-12" id="editGallerySection">
-                            <label class="form-label text-muted small fw-semibold mb-2">Foto Galeri Proyek Saat Ini</label>
-                            <div id="editGalleryList" class="d-flex flex-wrap gap-2 p-3 bg-light rounded-3 border">
-                                <!-- Populated dynamically by JS -->
+                        <!-- 2 Foto Proyek (Slide Gambar) -->
+                        <div class="col-12">
+                            <div class="p-3 bg-light rounded-3 border">
+                                <label class="form-label text-dark fw-bold mb-1">
+                                    <i class="bi bi-images text-primary-olive me-1"></i> Foto Proyek (Slide Gambar)
+                                </label>
+                                <p class="text-muted small mb-3" style="font-size: 0.78rem;">
+                                    Atur Gambar 1 dan Gambar 2 untuk proyek ini. Jika memiliki 2 gambar, foto dapat di-slide ke kiri dan kanan pada kartu proyek dan detail pratinjau.
+                                </p>
+                                <div class="row g-3">
+                                    <!-- Slot Gambar 1 (Slide 1 / Utama) -->
+                                    <div class="col-md-6">
+                                        <div class="p-2.5 bg-white rounded-2 border h-100">
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <label class="form-label text-muted small fw-semibold mb-0">
+                                                    <span class="badge bg-primary-olive text-white me-1">1</span> Gambar 1 (Slide 1 / Utama)
+                                                </label>
+                                            </div>
+                                            <!-- Preview Slot 1 -->
+                                            <div class="mb-2 text-center p-1 bg-light rounded border" style="min-height: 90px; display: flex; align-items: center; justify-content: center;">
+                                                <img id="editImg1Preview" src="" class="rounded" style="max-height: 85px; max-width: 100%; object-fit: contain;">
+                                            </div>
+                                            <label class="form-label text-muted small mb-1" style="font-size:0.75rem;">Ganti Gambar 1:</label>
+                                            <input type="file" name="thumbnail_file" id="editImg1File" class="form-control form-folio form-control-sm" accept="image/*" onchange="previewImgLocal(this, 'editImg1Preview')">
+                                            <div class="form-text text-muted" id="editThumbInfo" style="font-size:0.7rem;"></div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Slot Gambar 2 (Slide 2) -->
+                                    <div class="col-md-6">
+                                        <div class="p-2.5 bg-white rounded-2 border h-100">
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <label class="form-label text-muted small fw-semibold mb-0">
+                                                    <span class="badge bg-secondary text-white me-1">2</span> Gambar 2 (Slide 2)
+                                                </label>
+                                                <!-- Delete button for Image 2 -->
+                                                <button type="button" class="btn btn-outline-danger btn-sm py-0 px-2 d-none" id="editImg2DeleteBtn" style="font-size:0.72rem;" onclick="deleteImage2()">
+                                                    <i class="bi bi-trash-fill me-1"></i>Hapus Gambar 2
+                                                </button>
+                                            </div>
+                                            <!-- Preview Slot 2 -->
+                                            <div class="mb-2 text-center p-1 bg-light rounded border position-relative" style="min-height: 90px; display: flex; align-items: center; justify-content: center;">
+                                                <img id="editImg2Preview" src="" class="rounded d-none" style="max-height: 85px; max-width: 100%; object-fit: contain;">
+                                                <span id="editImg2EmptyNotice" class="text-muted small fst-italic" style="font-size:0.75rem;">Belum ada Gambar 2</span>
+                                            </div>
+                                            <label class="form-label text-muted small mb-1" style="font-size:0.75rem;">Unggah / Ganti Gambar 2:</label>
+                                            <input type="file" name="image_2" id="editImg2File" class="form-control form-folio form-control-sm" accept="image/*" onchange="previewImgLocal(this, 'editImg2Preview', null, 'editImg2EmptyNotice')">
+                                            <input type="hidden" name="image_2_id" id="editImg2Id" value="">
+                                            <div class="form-text text-muted" style="font-size:0.7rem;">Pilih foto baru untuk mengisi atau mengganti Gambar 2.</div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <!-- Status & Urutan -->
@@ -661,33 +742,71 @@ function clearField(fieldId) {
     }
 }
 
-function renderEditGallery(gallery, projectId) {
-    const list = document.getElementById('editGalleryList');
-    if (!list) return;
-    list.innerHTML = '';
-
-    if (!gallery || gallery.length === 0) {
-        list.innerHTML = '<div class="text-muted small fst-italic py-2 w-100 text-center"><i class="bi bi-images me-1"></i>Belum ada foto galeri tambahan. Unggah foto baru menggunakan form di atas.</div>';
-        return;
+function previewImgLocal(input, previewImgId, wrapId, hideNoticeId) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = document.getElementById(previewImgId);
+            if (img) {
+                img.src = e.target.result;
+                img.classList.remove('d-none');
+            }
+            if (wrapId) {
+                const wrap = document.getElementById(wrapId);
+                if (wrap) wrap.classList.remove('d-none');
+            }
+            if (hideNoticeId) {
+                const notice = document.getElementById(hideNoticeId);
+                if (notice) notice.classList.add('d-none');
+            }
+        };
+        reader.readAsDataURL(input.files[0]);
     }
+}
 
-    gallery.forEach((img, idx) => {
-        const item = document.createElement('div');
-        item.className = 'position-relative d-inline-block rounded-3 border overflow-hidden shadow-sm bg-white';
-        item.id = 'gallery-item-' + img.id;
-        item.style.width = '100px';
-        item.style.height = '75px';
-        item.innerHTML = `
-            <img src="${img.url}" alt="Galeri ${idx + 1}" style="width:100%; height:100%; object-fit:cover;">
-            <button type="button" class="btn btn-danger btn-sm p-0 position-absolute top-0 end-0 m-1 rounded-circle d-flex align-items-center justify-content-center shadow"
-                    style="width:22px; height:22px; font-size:11px;"
-                    title="Hapus foto ini"
-                    onclick="deleteGalleryImage(${img.id}, ${projectId})">
-                <i class="bi bi-trash-fill"></i>
-            </button>
-        `;
-        list.appendChild(item);
+function deleteImage2() {
+    const imgId = document.getElementById('editImg2Id').value;
+    const projId = document.getElementById('editProjId').value;
+    if (!imgId) return;
+    if (!confirm('Hapus Gambar 2 dari proyek ini?')) return;
+
+    const formData = new FormData();
+    formData.append('csrf_token', '<?= $csrf_token ?>');
+    formData.append('action', 'delete_gallery_image');
+    formData.append('image_id', imgId);
+    formData.append('project_id', projId);
+
+    fetch('projects.php', {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === 'success') {
+            document.getElementById('editImg2Preview').src = '';
+            document.getElementById('editImg2Preview').classList.add('d-none');
+            document.getElementById('editImg2EmptyNotice').classList.remove('d-none');
+            document.getElementById('editImg2DeleteBtn').classList.add('d-none');
+            document.getElementById('editImg2Id').value = '';
+            document.getElementById('editImg2File').value = '';
+            if (currentEditingProject && currentEditingProject.gallery) {
+                currentEditingProject.gallery = currentEditingProject.gallery.filter(g => g.id != imgId);
+            }
+        } else {
+            alert(data.message || 'Gagal menghapus gambar.');
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        alert('Terjadi kesalahan saat menghapus gambar.');
     });
+}
+
+function renderEditGallery(gallery, projectId) {
+    // Gallery helper if needed
 }
 
 function deleteGalleryImage(imgId, projId) {
@@ -713,9 +832,6 @@ function deleteGalleryImage(imgId, projId) {
             if (el) el.remove();
             if (currentEditingProject && currentEditingProject.gallery) {
                 currentEditingProject.gallery = currentEditingProject.gallery.filter(g => g.id !== imgId);
-                if (currentEditingProject.gallery.length === 0) {
-                    renderEditGallery([], projId);
-                }
             }
         } else {
             alert(data.message || 'Gagal menghapus foto.');
@@ -747,13 +863,40 @@ function openEditProject(p) {
     // Set info thumbnail lama
     const thumbInfo = document.getElementById('editThumbInfo');
     if (p.thumbnail && p.thumbnail !== 'placeholder.png') {
-        thumbInfo.textContent = 'Thumbnail saat ini: ' + p.thumbnail;
+        thumbInfo.textContent = 'File saat ini: ' + p.thumbnail;
     } else {
         thumbInfo.textContent = '';
     }
 
-    // Render gallery images
-    renderEditGallery(p.gallery, p.id);
+    // Set Preview Gambar 1 (Slide 1 / Sampul)
+    const img1Prev = document.getElementById('editImg1Preview');
+    const thumbPath = p.thumbnail && p.thumbnail !== 'placeholder.png' ? '../uploads/projects/' + p.thumbnail : '../assets/img/placeholder.png';
+    img1Prev.src = thumbPath;
+
+    // Reset input file Gambar 1 & Gambar 2
+    document.getElementById('editImg1File').value = '';
+    document.getElementById('editImg2File').value = '';
+
+    // Set Preview Gambar 2 (Slide 2)
+    const img2Prev = document.getElementById('editImg2Preview');
+    const img2Notice = document.getElementById('editImg2EmptyNotice');
+    const img2Del = document.getElementById('editImg2DeleteBtn');
+    const img2IdInput = document.getElementById('editImg2Id');
+
+    if (p.gallery && p.gallery.length > 0) {
+        const firstGal = p.gallery[0];
+        img2Prev.src = firstGal.url;
+        img2Prev.classList.remove('d-none');
+        img2Notice.classList.add('d-none');
+        img2Del.classList.remove('d-none');
+        img2IdInput.value = firstGal.id;
+    } else {
+        img2Prev.src = '';
+        img2Prev.classList.add('d-none');
+        img2Notice.classList.remove('d-none');
+        img2Del.classList.add('d-none');
+        img2IdInput.value = '';
+    }
 
     // Set dropdown kategori berdasarkan category_id (FK)
     const sel = document.getElementById('editCategoryId');

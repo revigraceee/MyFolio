@@ -308,18 +308,44 @@ require_once __DIR__ . '/includes/navbar.php';
                 ?>
                     <div class="col-md-6 col-lg-4 project-item" data-category="<?= e($catDisplay) ?>">
                         <div class="project-card">
-                            <div class="project-thumb-box">
-                                <img src="<?= $thumbUrl ?>" alt="<?= e($pj['title']) ?>" loading="lazy">
+                            <div class="project-thumb-box" id="card-carousel-<?= $pj['id'] ?>"
+                                 onclick="openProjectFromCard(<?= htmlspecialchars(json_encode($pj), ENT_QUOTES, 'UTF-8') ?>, event)"
+                                 role="button" title="Klik untuk melihat detail proyek">
+                                <!-- Images Slider Track -->
+                                <div class="card-slider-track">
+                                    <?php foreach ($pj['all_images'] as $imgIdx => $imgItem): ?>
+                                        <img src="<?= e($imgItem['url']) ?>" alt="<?= e($pj['title']) ?>" 
+                                             class="card-slider-img <?= $imgIdx === 0 ? 'active' : '' ?>"
+                                             data-index="<?= $imgIdx ?>"
+                                             loading="lazy">
+                                    <?php endforeach; ?>
+                                </div>
+
                                 <span class="project-cat-pill"><?= e($catDisplay) ?></span>
                                 <?php if (!empty($pj['is_featured'])): ?>
                                     <span class="project-featured-pill">
                                         <i class="bi bi-star-fill me-1"></i> Featured
                                     </span>
                                 <?php endif; ?>
-                                <?php if (!empty($pj['all_images']) && count($pj['all_images']) > 1): ?>
-                                    <span class="project-gallery-pill">
-                                        <i class="bi bi-images me-1"></i><?= count($pj['all_images']) ?> Foto
-                                    </span>
+
+                                <?php if (count($pj['all_images']) > 1): ?>
+                                    <!-- Slide Buttons: Hanya untuk bagian proyek yang memiliki 2 gambar -->
+                                    <button type="button" class="card-slide-btn card-slide-prev"
+                                            onclick="slideCardImage(<?= $pj['id'] ?>, -1, event)" title="Slide Gambar Sebelumnya">
+                                        <i class="bi bi-chevron-left"></i>
+                                    </button>
+                                    <button type="button" class="card-slide-btn card-slide-next"
+                                            onclick="slideCardImage(<?= $pj['id'] ?>, 1, event)" title="Slide Gambar Berikutnya">
+                                        <i class="bi bi-chevron-right"></i>
+                                    </button>
+
+                                    <!-- Slide Indicator Dots -->
+                                    <div class="card-slide-dots">
+                                        <?php foreach ($pj['all_images'] as $imgIdx => $imgItem): ?>
+                                            <span class="card-slide-dot <?= $imgIdx === 0 ? 'active' : '' ?>"
+                                                  onclick="jumpCardImage(<?= $pj['id'] ?>, <?= $imgIdx ?>, event)"></span>
+                                        <?php endforeach; ?>
+                                    </div>
                                 <?php endif; ?>
                             </div>
 
@@ -340,7 +366,7 @@ require_once __DIR__ . '/includes/navbar.php';
                                 <?php endif; ?>
 
                                 <button type="button" class="btn btn-outline-olive btn-sm w-100 justify-content-center"
-                                    onclick="openProjectModal(<?= htmlspecialchars(json_encode($pj), ENT_QUOTES, 'UTF-8') ?>, '<?= $thumbUrl ?>')">
+                                    onclick="openProjectFromCard(<?= htmlspecialchars(json_encode($pj), ENT_QUOTES, 'UTF-8') ?>, event)">
                                     <span>View Details</span>
                                     <i class="bi bi-arrow-right"></i>
                                 </button>
@@ -754,16 +780,76 @@ let currentDetailIndex = 0;
 let lightboxImages = [];
 let fullImageIndex = 0;
 
-function openProjectModal(project, thumbUrl) {
+// ── SLIDE PADA KARTU PROYEK (Hanya untuk bagian proyek yang memiliki 2 gambar) ──
+function slideCardImage(projectId, dir, e) {
+    if (e) e.stopPropagation();
+    const box = document.getElementById('card-carousel-' + projectId);
+    if (!box) return;
+    const imgs = box.querySelectorAll('.card-slider-img');
+    const dots = box.querySelectorAll('.card-slide-dot');
+    if (imgs.length <= 1) return;
+
+    let currentIdx = 0;
+    imgs.forEach((img, idx) => {
+        if (img.classList.contains('active')) currentIdx = idx;
+    });
+
+    let newIdx = (currentIdx + dir + imgs.length) % imgs.length;
+
+    imgs.forEach((img, idx) => {
+        if (idx === newIdx) img.classList.add('active');
+        else img.classList.remove('active');
+    });
+
+    dots.forEach((dot, idx) => {
+        if (idx === newIdx) dot.classList.add('active');
+        else dot.classList.remove('active');
+    });
+}
+
+function jumpCardImage(projectId, targetIdx, e) {
+    if (e) e.stopPropagation();
+    const box = document.getElementById('card-carousel-' + projectId);
+    if (!box) return;
+    const imgs = box.querySelectorAll('.card-slider-img');
+    const dots = box.querySelectorAll('.card-slide-dot');
+
+    imgs.forEach((img, idx) => {
+        if (idx === targetIdx) img.classList.add('active');
+        else img.classList.remove('active');
+    });
+
+    dots.forEach((dot, idx) => {
+        if (idx === targetIdx) dot.classList.add('active');
+        else dot.classList.remove('active');
+    });
+}
+
+function openProjectFromCard(project, e) {
+    if (e && (e.target.closest('.card-slide-btn') || e.target.closest('.card-slide-dot'))) {
+        return;
+    }
+    let startIdx = 0;
+    const box = document.getElementById('card-carousel-' + project.id);
+    if (box) {
+        const activeImg = box.querySelector('.card-slider-img.active');
+        if (activeImg && activeImg.dataset.index) {
+            startIdx = parseInt(activeImg.dataset.index) || 0;
+        }
+    }
+    openProjectModal(project, startIdx);
+}
+
+function openProjectModal(project, startIndex) {
     currentProject = project;
 
     // Ensure all_images exists
     if (!project.all_images || project.all_images.length === 0) {
-        const fallbackUrl = thumbUrl || (project.thumbnail ? 'uploads/projects/' + project.thumbnail : 'assets/img/placeholder.png');
+        const fallbackUrl = (project.thumbnail ? 'uploads/projects/' + project.thumbnail : 'assets/img/placeholder.png');
         project.all_images = [{ url: fallbackUrl, title: project.title }];
     }
 
-    currentDetailIndex = 0;
+    currentDetailIndex = (startIndex !== undefined && startIndex < project.all_images.length) ? startIndex : 0;
 
     document.getElementById('mProjTitle').innerText = project.title;
     document.getElementById('mProjCategory').innerText = project.display_category || project.category;
