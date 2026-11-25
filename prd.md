@@ -316,16 +316,16 @@ ALTER TABLE `projects` DROP COLUMN `category`;
 
 | ID | Skenario | Langkah | Hasil yang Diharapkan | Status |
 | :--- | :--- | :--- | :--- | :--- |
-| **TC-01** | Tambah kategori baru | Buka `admin/categories.php` → klik "+ Tambah" → isi "Machine Learning" → Submit | Kategori tersimpan, slug `machine-learning` ter-generate, muncul di tabel, flash sukses | ⬜ |
-| **TC-02** | Slug auto-generate | Isi nama "Data & AI (2024)" di form | Slug menjadi `data-ai-2024` (simbol dihapus, spasi jadi `-`) | ⬜ |
-| **TC-03** | Nama kategori duplikat | Tambah kategori dengan nama yang sudah ada | Sistem menampilkan pesan error "Nama kategori sudah digunakan" | ⬜ |
-| **TC-04** | Edit kategori | Klik Edit pada "Lainnya" → ubah nama → Simpan | Data terupdate di DB, perubahan langsung tampil di halaman publik | ⬜ |
-| **TC-05** | Hapus kategori tidak terpakai | Hapus kategori "Lainnya" (0 proyek terkait) | Kategori terhapus dari DB, flash "Kategori berhasil dihapus" | ⬜ |
-| **TC-06** | Hapus kategori terpakai | Hapus kategori "Web Development" (ada proyek terkait) | Sistem menolak penghapusan, tampilkan flash error beserta jumlah proyek terkait | ⬜ |
-| **TC-07** | Filter publik dinamis | Admin tambah kategori "Blockchain" → buka `index.php` | Tombol filter "Blockchain" muncul otomatis di halaman publik | ⬜ |
-| **TC-08** | Dropdown proyek dinamis | Buka form tambah proyek di admin | Dropdown kategori memuat semua kategori dari DB, bukan nilai statis | ⬜ |
-| **TC-09** | Validasi form kosong | Submit form tambah kategori tanpa nama | Form tidak terkirim, pesan validasi HTML5 muncul di field kosong | ⬜ |
-| **TC-10** | Hak akses halaman | Akses `admin/categories.php` tanpa login | Redirect otomatis ke `admin/login.php` | ⬜ |
+| **TC-01** | Tambah kategori baru | Buka `admin/categories.php` → klik "+ Tambah" → isi "Machine Learning" → Submit | Kategori tersimpan, slug `machine-learning` ter-generate, muncul di tabel, flash sukses | ✅ |
+| **TC-02** | Slug auto-generate | Isi nama "Data & AI (2024)" di form | Slug menjadi `data-ai-2024` (simbol dihapus, spasi jadi `-`) | ✅ |
+| **TC-03** | Nama kategori duplikat | Tambah kategori dengan nama yang sudah ada | Sistem menampilkan pesan error "Nama kategori sudah digunakan" | ✅ |
+| **TC-04** | Edit kategori | Klik Edit pada "Lainnya" → ubah nama → Simpan | Data terupdate di DB, perubahan langsung tampil di halaman publik | ✅ |
+| **TC-05** | Hapus kategori tidak terpakai | Hapus kategori "Lainnya" (0 proyek terkait) | Kategori terhapus dari DB, flash "Kategori berhasil dihapus" | ✅ |
+| **TC-06** | Hapus kategori terpakai | Hapus kategori "Web Development" (ada proyek terkait) | Sistem menolak penghapusan, tampilkan flash error beserta jumlah proyek terkait | ✅ |
+| **TC-07** | Filter publik dinamis | Admin tambah kategori "Blockchain" → buka `index.php` | Tombol filter "Blockchain" muncul otomatis di halaman publik | ✅ |
+| **TC-08** | Dropdown proyek dinamis | Buka form tambah proyek di admin | Dropdown kategori memuat semua kategori dari DB, bukan nilai statis | ✅ |
+| **TC-09** | Validasi form kosong | Submit form tambah kategori tanpa nama | Form tidak terkirim, pesan validasi HTML5 muncul di field kosong | ✅ |
+| **TC-10** | Hak akses halaman | Akses `admin/categories.php` tanpa login | Redirect otomatis ke `admin/login.php` | ✅ |
 
 ---
 
@@ -352,14 +352,14 @@ Urutan pengerjaan fitur v2.0 berdasarkan dependensi:
 Fitur v2.0 dinyatakan **selesai dan siap rilis** apabila seluruh kriteria berikut terpenuhi:
 
 - [x] Script migrasi SQL berhasil dijalankan tanpa error
-- [ ] Halaman `admin/categories.php` dapat Tambah, Edit, dan Hapus kategori
-- [ ] Proteksi penghapusan kategori aktif berjalan dengan benar
-- [ ] Slug kategori ter-generate otomatis dan unik
-- [ ] Dropdown kategori pada form proyek memuat data dari DB
-- [ ] Tombol filter di halaman publik bersifat dinamis (dari DB)
-- [ ] Semua 10 test cases lulus (✅)
-- [ ] Tidak ada PHP warning/error di semua halaman yang terpengaruh
-- [ ] Kode di-push ke GitHub branch `main` dengan pesan commit yang deskriptif
+- [x] Halaman `admin/categories.php` dapat Tambah, Edit, dan Hapus kategori
+- [x] Proteksi penghapusan kategori aktif berjalan dengan benar
+- [x] Slug kategori ter-generate otomatis dan unik
+- [x] Dropdown kategori pada form proyek memuat data dari DB
+- [x] Tombol filter di halaman publik bersifat dinamis (dari DB)
+- [x] Semua 10 test cases lulus (✅)
+- [x] Tidak ada PHP warning/error di semua halaman yang terpengaruh
+- [x] Kode di-push ke GitHub branch `main` dengan pesan commit yang deskriptif
 
 ---
 
@@ -608,16 +608,16 @@ ALTER TABLE `projects` DROP COLUMN `category`;
 
 | ID | Skenario | Langkah | Hasil yang Diharapkan | Status |
 | :--- | :--- | :--- | :--- | :--- |
-| **TC-01** | Tambah kategori baru | Buka `admin/categories.php` → klik "+ Tambah" → isi "Machine Learning" → Submit | Kategori tersimpan, slug `machine-learning` ter-generate, muncul di tabel, flash sukses | ⬜ |
-| **TC-02** | Slug auto-generate | Isi nama "Data & AI (2024)" di form | Slug menjadi `data-ai-2024` (simbol dihapus, spasi jadi `-`) | ⬜ |
-| **TC-03** | Nama kategori duplikat | Tambah kategori dengan nama yang sudah ada | Sistem menampilkan pesan error "Nama kategori sudah digunakan" | ⬜ |
-| **TC-04** | Edit kategori | Klik Edit pada "Lainnya" → ubah nama → Simpan | Data terupdate di DB, perubahan langsung tampil di halaman publik | ⬜ |
-| **TC-05** | Hapus kategori tidak terpakai | Hapus kategori "Lainnya" (0 proyek terkait) | Kategori terhapus dari DB, flash "Kategori berhasil dihapus" | ⬜ |
-| **TC-06** | Hapus kategori terpakai | Hapus kategori "Web Development" (ada proyek terkait) | Sistem menolak penghapusan, tampilkan flash error beserta jumlah proyek terkait | ⬜ |
-| **TC-07** | Filter publik dinamis | Admin tambah kategori "Blockchain" → buka `index.php` | Tombol filter "Blockchain" muncul otomatis di halaman publik | ⬜ |
-| **TC-08** | Dropdown proyek dinamis | Buka form tambah proyek di admin | Dropdown kategori memuat semua kategori dari DB, bukan nilai statis | ⬜ |
-| **TC-09** | Validasi form kosong | Submit form tambah kategori tanpa nama | Form tidak terkirim, pesan validasi HTML5 muncul di field kosong | ⬜ |
-| **TC-10** | Hak akses halaman | Akses `admin/categories.php` tanpa login | Redirect otomatis ke `admin/login.php` | ⬜ |
+| **TC-01** | Tambah kategori baru | Buka `admin/categories.php` → klik "+ Tambah" → isi "Machine Learning" → Submit | Kategori tersimpan, slug `machine-learning` ter-generate, muncul di tabel, flash sukses | ✅ |
+| **TC-02** | Slug auto-generate | Isi nama "Data & AI (2024)" di form | Slug menjadi `data-ai-2024` (simbol dihapus, spasi jadi `-`) | ✅ |
+| **TC-03** | Nama kategori duplikat | Tambah kategori dengan nama yang sudah ada | Sistem menampilkan pesan error "Nama kategori sudah digunakan" | ✅ |
+| **TC-04** | Edit kategori | Klik Edit pada "Lainnya" → ubah nama → Simpan | Data terupdate di DB, perubahan langsung tampil di halaman publik | ✅ |
+| **TC-05** | Hapus kategori tidak terpakai | Hapus kategori "Lainnya" (0 proyek terkait) | Kategori terhapus dari DB, flash "Kategori berhasil dihapus" | ✅ |
+| **TC-06** | Hapus kategori terpakai | Hapus kategori "Web Development" (ada proyek terkait) | Sistem menolak penghapusan, tampilkan flash error beserta jumlah proyek terkait | ✅ |
+| **TC-07** | Filter publik dinamis | Admin tambah kategori "Blockchain" → buka `index.php` | Tombol filter "Blockchain" muncul otomatis di halaman publik | ✅ |
+| **TC-08** | Dropdown proyek dinamis | Buka form tambah proyek di admin | Dropdown kategori memuat semua kategori dari DB, bukan nilai statis | ✅ |
+| **TC-09** | Validasi form kosong | Submit form tambah kategori tanpa nama | Form tidak terkirim, pesan validasi HTML5 muncul di field kosong | ✅ |
+| **TC-10** | Hak akses halaman | Akses `admin/categories.php` tanpa login | Redirect otomatis ke `admin/login.php` | ✅ |
 
 ---
 
@@ -644,14 +644,14 @@ Urutan pengerjaan fitur v2.0 berdasarkan dependensi:
 Fitur v2.0 dinyatakan **selesai dan siap rilis** apabila seluruh kriteria berikut terpenuhi:
 
 - [x] Script migrasi SQL berhasil dijalankan tanpa error
-- [ ] Halaman `admin/categories.php` dapat Tambah, Edit, dan Hapus kategori
-- [ ] Proteksi penghapusan kategori aktif berjalan dengan benar
-- [ ] Slug kategori ter-generate otomatis dan unik
-- [ ] Dropdown kategori pada form proyek memuat data dari DB
-- [ ] Tombol filter di halaman publik bersifat dinamis (dari DB)
-- [ ] Semua 10 test cases lulus (✅)
-- [ ] Tidak ada PHP warning/error di semua halaman yang terpengaruh
-- [ ] Kode di-push ke GitHub branch `main` dengan pesan commit yang deskriptif
+- [x] Halaman `admin/categories.php` dapat Tambah, Edit, dan Hapus kategori
+- [x] Proteksi penghapusan kategori aktif berjalan dengan benar
+- [x] Slug kategori ter-generate otomatis dan unik
+- [x] Dropdown kategori pada form proyek memuat data dari DB
+- [x] Tombol filter di halaman publik bersifat dinamis (dari DB)
+- [x] Semua 10 test cases lulus (✅)
+- [x] Tidak ada PHP warning/error di semua halaman yang terpengaruh
+- [x] Kode di-push ke GitHub branch `main` dengan pesan commit yang deskriptif
 
 ---
 
