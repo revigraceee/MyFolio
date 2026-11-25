@@ -1,450 +1,405 @@
--- Database Schema & Seed Data v2.0 - MyFolio (Digital Business Student)
-CREATE DATABASE IF NOT EXISTS `db_myfolio` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+-- MariaDB dump 10.19  Distrib 10.4.32-MariaDB, for Win64 (AMD64)
+--
+-- Host: localhost    Database: db_myfolio
+-- ------------------------------------------------------
+-- Server version	10.4.32-MariaDB
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8mb4 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+
+--
+-- Current Database: `db_myfolio`
+--
+
+CREATE DATABASE /*!32312 IF NOT EXISTS*/ `db_myfolio` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci */;
+
 USE `db_myfolio`;
 
--- Drop old tables if necessary to align schema
-DROP TABLE IF EXISTS `social_links`;
-DROP TABLE IF EXISTS `education`;
-DROP TABLE IF EXISTS `experiences`;
-DROP TABLE IF EXISTS `experience_types`;
-DROP TABLE IF EXISTS `project_images`;
-DROP TABLE IF EXISTS `projects`;
-DROP TABLE IF EXISTS `project_categories`;
-DROP TABLE IF EXISTS `skills`;
-DROP TABLE IF EXISTS `skill_categories`;
-DROP TABLE IF EXISTS `messages`;
-DROP TABLE IF EXISTS `profile`;
+--
+-- Table structure for table `admins`
+--
+
 DROP TABLE IF EXISTS `admins`;
-
--- 1. Table admins
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `admins` (
-  `id` INT AUTO_INCREMENT PRIMARY KEY,
-  `username` VARCHAR(50) NOT NULL UNIQUE,
-  `password_hash` VARCHAR(255) NOT NULL,
-  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- 2. Table profile
-CREATE TABLE `profile` (
-  `id` INT AUTO_INCREMENT PRIMARY KEY,
-  `full_name` VARCHAR(100) NOT NULL,
-  `headline` VARCHAR(180) NOT NULL,
-  `about_me` TEXT NOT NULL,
-  `email` VARCHAR(120) NOT NULL,
-  `phone` VARCHAR(30) DEFAULT NULL,
-  `location` VARCHAR(120) DEFAULT NULL,
-  `avatar` VARCHAR(255) DEFAULT NULL,
-  `cv_path` VARCHAR(255) DEFAULT NULL,
-  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- 3. Table project_categories
-CREATE TABLE `project_categories` (
-  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `category_name` VARCHAR(100) NOT NULL,
-  `slug` VARCHAR(100) NOT NULL,
-  `sort_order` TINYINT UNSIGNED NOT NULL DEFAULT 0,
-  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `username` varchar(50) NOT NULL,
+  `password_hash` varchar(255) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_slug` (`slug`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  UNIQUE KEY `username` (`username`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- 4. Table projects
-CREATE TABLE `projects` (
-  `id` INT AUTO_INCREMENT PRIMARY KEY,
-  `title` VARCHAR(150) NOT NULL,
-  `category_id` INT UNSIGNED DEFAULT NULL,
-  `slug` VARCHAR(180) UNIQUE NOT NULL,
-  `category` VARCHAR(80) NOT NULL,
-  `short_description` VARCHAR(255) DEFAULT NULL,
-  `description` TEXT DEFAULT NULL,
-  `role` VARCHAR(120) DEFAULT NULL,
-  `process` TEXT DEFAULT NULL,
-  `result` TEXT DEFAULT NULL,
-  `tools` TEXT DEFAULT NULL,
-  `thumbnail` VARCHAR(255) DEFAULT NULL,
-  `project_url` VARCHAR(255) DEFAULT NULL,
-  `repository_url` VARCHAR(255) DEFAULT NULL,
-  `is_featured` TINYINT(1) DEFAULT 0,
-  `status` ENUM('draft', 'published') DEFAULT 'published',
-  `sort_order` INT DEFAULT 0,
-  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  CONSTRAINT `fk_projects_category` FOREIGN KEY (`category_id`) REFERENCES `project_categories` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+--
+-- Dumping data for table `admins`
+--
 
--- 5. Table project_images (Multi-image Gallery)
-CREATE TABLE `project_images` (
-  `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  `project_id` INT NOT NULL,
-  `image_path` VARCHAR(255) NOT NULL,
-  `sort_order` INT DEFAULT 0,
-  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  INDEX `idx_project_id` (`project_id`),
-  CONSTRAINT `fk_project_images_project` FOREIGN KEY (`project_id`) REFERENCES `projects` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+LOCK TABLES `admins` WRITE;
+/*!40000 ALTER TABLE `admins` DISABLE KEYS */;
+INSERT INTO `admins` VALUES (1,'admin','$2y$10$uaMypjUm03aN.oZUMu.pVukI/2RKxEyYlTUr96AAKnlEk3UqPN.vK','2026-11-05 04:49:17','2026-11-05 04:49:17');
+/*!40000 ALTER TABLE `admins` ENABLE KEYS */;
+UNLOCK TABLES;
 
--- 6. Table skill_categories
-CREATE TABLE `skill_categories` (
-  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `category_name` VARCHAR(100) NOT NULL,
-  `sort_order` TINYINT UNSIGNED NOT NULL DEFAULT 0,
-  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_name` (`category_name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+--
+-- Table structure for table `education`
+--
 
--- 6. Table skills
-CREATE TABLE `skills` (
-  `id` INT AUTO_INCREMENT PRIMARY KEY,
-  `skill_name` VARCHAR(100) NOT NULL,
-  `category` VARCHAR(80) NOT NULL,
-  `proficiency` VARCHAR(30) DEFAULT NULL,
-  `description` VARCHAR(255) DEFAULT NULL,
-  `sort_order` INT DEFAULT 0,
-  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+DROP TABLE IF EXISTS `education`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `education` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `institution` varchar(150) NOT NULL,
+  `degree` varchar(100) NOT NULL,
+  `major` varchar(120) NOT NULL,
+  `period_start` date DEFAULT NULL,
+  `period_end` date DEFAULT NULL,
+  `is_current` tinyint(1) DEFAULT 0,
+  `description` text DEFAULT NULL,
+  `sort_order` int(11) DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- 7. Table experience_types (Tipe / Kategori Pengalaman Dinamis)
+--
+-- Dumping data for table `education`
+--
+
+LOCK TABLES `education` WRITE;
+/*!40000 ALTER TABLE `education` DISABLE KEYS */;
+INSERT INTO `education` VALUES (1,'Universitas Anwar Medika','Sarjana Bisnis Digital (S.Bns)','Bisnis Digital','2025-09-22',NULL,1,'bismillah sukses kaya raya',1,'2026-11-05 04:49:17','2026-11-20 08:21:58'),(2,'SMK Yapalis Krian','Sekolah Menengah Kejuruan','Multimedia','2019-07-01','2022-06-01',0,'Suksees',2,'2026-11-05 04:49:17','2026-11-20 08:22:45');
+/*!40000 ALTER TABLE `education` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `experience_types`
+--
+
+DROP TABLE IF EXISTS `experience_types`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `experience_types` (
-  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `type_name` VARCHAR(100) NOT NULL,
-  `sort_order` TINYINT UNSIGNED NOT NULL DEFAULT 0,
-  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `type_name` varchar(100) NOT NULL,
+  `sort_order` tinyint(3) unsigned NOT NULL DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_type_name` (`type_name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
-INSERT INTO `experience_types` (`id`, `type_name`, `sort_order`) VALUES
-(1, 'Work', 1),
-(2, 'Organization', 2),
-(3, 'Committee', 3),
-(4, 'Competition', 4),
-(5, 'Volunteer', 5);
+--
+-- Dumping data for table `experience_types`
+--
 
--- 8. Table experiences
+LOCK TABLES `experience_types` WRITE;
+/*!40000 ALTER TABLE `experience_types` DISABLE KEYS */;
+INSERT INTO `experience_types` VALUES (1,'Work',1,'2026-11-21 04:20:35'),(2,'Organization',2,'2026-11-21 04:20:35'),(3,'Committee',3,'2026-11-21 04:20:35'),(4,'Competition',4,'2026-11-21 04:20:35'),(5,'Volunteer',5,'2026-11-21 04:20:35'),(6,'Internship',6,'2026-11-21 04:32:56');
+/*!40000 ALTER TABLE `experience_types` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `experiences`
+--
+
+DROP TABLE IF EXISTS `experiences`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `experiences` (
-  `id` INT AUTO_INCREMENT PRIMARY KEY,
-  `type` VARCHAR(100) NOT NULL,
-  `title` VARCHAR(150) NOT NULL,
-  `organization` VARCHAR(150) NOT NULL,
-  `period_start` DATE DEFAULT NULL,
-  `period_end` DATE DEFAULT NULL,
-  `is_current` TINYINT(1) DEFAULT 0,
-  `description` TEXT NOT NULL,
-  `achievements` TEXT DEFAULT NULL,
-  `sort_order` INT DEFAULT 0,
-  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `type` varchar(100) NOT NULL,
+  `title` varchar(150) NOT NULL,
+  `organization` varchar(150) NOT NULL,
+  `period_start` date DEFAULT NULL,
+  `period_end` date DEFAULT NULL,
+  `is_current` tinyint(1) DEFAULT 0,
+  `description` text NOT NULL,
+  `achievements` text DEFAULT NULL,
+  `sort_order` int(11) DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- 5. Table education
-CREATE TABLE `education` (
-  `id` INT AUTO_INCREMENT PRIMARY KEY,
-  `institution` VARCHAR(150) NOT NULL,
-  `degree` VARCHAR(100) NOT NULL,
-  `major` VARCHAR(120) NOT NULL,
-  `period_start` DATE DEFAULT NULL,
-  `period_end` DATE DEFAULT NULL,
-  `is_current` TINYINT(1) DEFAULT 0,
-  `description` TEXT DEFAULT NULL,
-  `sort_order` INT DEFAULT 0,
-  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+--
+-- Dumping data for table `experiences`
+--
 
--- 6. Table skills
-CREATE TABLE `skills` (
-  `id` INT AUTO_INCREMENT PRIMARY KEY,
-  `skill_name` VARCHAR(100) NOT NULL,
-  `category` VARCHAR(80) NOT NULL,
-  `proficiency` VARCHAR(30) DEFAULT NULL,
-  `description` VARCHAR(255) DEFAULT NULL,
-  `sort_order` INT DEFAULT 0,
-  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+LOCK TABLES `experiences` WRITE;
+/*!40000 ALTER TABLE `experiences` DISABLE KEYS */;
+INSERT INTO `experiences` VALUES (1,'Work','Admin Color Mixing','Auto 2000 Body dan Cat Kenjeran','2022-09-15','2024-12-31',0,'Bertanggung jawab mengolah data masuk, Input data, Follow up data, Stok Opname dan Stock Keeper','',1,'2026-11-05 04:49:17','2026-11-21 04:14:54'),(2,'Organization','Wakil Ketua 2','HIMA Fakultas Teknologi dan Bisnis','2025-10-01',NULL,1,'Memipin Hima dan membantu Ketua dan Wakil ketua 1, membuat projek Hima, berkolaborasi dengan Ormawa lain','1. Seminar kolaborasi\r\n2. Webinar kolaborasi\r\n3. PKKMB Fakultas\r\n4. Sister School\r\n5. Tech to School',2,'2026-11-05 04:49:17','2026-11-21 05:13:56'),(3,'Internship','Social media & Content Intern','Digital Marketing Universitas Anwar Medika','2026-09-21',NULL,1,'Mengelola sosial media, Live Streaming, Content Creator','',3,'2026-11-05 04:49:17','2026-11-21 04:37:04'),(4,'Competition','Presenter','Institut Asia Malang','2026-11-18','2026-11-19',0,'Mengikuti lomba conference internasional membuat Jurnal Artikel dengan tema \" Digital Branding Based on Local Wisdom to Enhance the Competitivness of UMKM Product \" Penelitian ini mengkaji pengaruh strategi digital branding berbasis kearifan lokal dan kapabilitas pemasaran digital terhadap daya saing UMKM.','Nice Try',4,'2026-11-05 04:49:17','2026-11-21 05:12:19'),(5,'Work','Media','KPPTI','2026-11-11','2026-11-13',0,'Ikut serta dalam kegiatan KPPTI yang berlokasi di Unair sebagai media yang meliput selama kegiatan berlangsung dan mengupload di sosial media, berita internal atau eksternal.','',5,'2026-11-05 04:49:17','2026-11-21 05:11:38');
+/*!40000 ALTER TABLE `experiences` ENABLE KEYS */;
+UNLOCK TABLES;
 
--- 7. Table messages
+--
+-- Table structure for table `messages`
+--
+
+DROP TABLE IF EXISTS `messages`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `messages` (
-  `id` INT AUTO_INCREMENT PRIMARY KEY,
-  `sender_name` VARCHAR(100) NOT NULL,
-  `sender_email` VARCHAR(120) NOT NULL,
-  `subject` VARCHAR(150) DEFAULT NULL,
-  `message` TEXT NOT NULL,
-  `is_read` TINYINT(1) DEFAULT 0,
-  `sent_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `sender_name` varchar(100) NOT NULL,
+  `sender_email` varchar(120) NOT NULL,
+  `subject` varchar(150) DEFAULT NULL,
+  `message` text NOT NULL,
+  `is_read` tinyint(1) DEFAULT 0,
+  `sent_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- 8. Table social_links
+--
+-- Dumping data for table `messages`
+--
+
+LOCK TABLES `messages` WRITE;
+/*!40000 ALTER TABLE `messages` DISABLE KEYS */;
+INSERT INTO `messages` VALUES (1,'Rizky Pratama','rizky@fintechstar.id','Peluang Magang Product & Business Strategy','Halo Nadia, kami melihat portofolio business plan EcoBite Anda dan sangat terkesan dengan ketajaman unit economics yang Anda rancang. Kami ingin mengajak Anda berbincang mengenai peluang internship posisi Business Analyst di tim kami.',1,'2026-11-05 04:49:17'),(2,'Dewi Anggraini','dewi.anggraini@umkm-kreatif.com','Konsultasi Go-Digital Produk Olahan Pangan','Selamat siang Nadia, kami pengelola komunitas UMKM kuliner di Bandung ingin mengundang Anda sebagai pemateri sesi sharing session Digital Marketing untuk UMKM.',1,'2026-11-04 04:49:17');
+/*!40000 ALTER TABLE `messages` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `profile`
+--
+
+DROP TABLE IF EXISTS `profile`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `profile` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `full_name` varchar(100) NOT NULL,
+  `headline` varchar(180) NOT NULL,
+  `about_me` text NOT NULL,
+  `email` varchar(120) NOT NULL,
+  `phone` varchar(30) DEFAULT NULL,
+  `location` varchar(120) DEFAULT NULL,
+  `avatar` varchar(255) DEFAULT NULL,
+  `cv_path` varchar(255) DEFAULT NULL,
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `profile`
+--
+
+LOCK TABLES `profile` WRITE;
+/*!40000 ALTER TABLE `profile` DISABLE KEYS */;
+INSERT INTO `profile` VALUES (1,'Revigrace Agnes Andyka Firenza','Mahasiswa Bisnis Digital | Turning Ideas Into Meaningful Digital Experiences','Saya adalah seorang mahasiswa Bisnis Digital yang memiliki antusiasme tinggi pada pengembangan model bisnis terukur, strategi pemasaran digital, riset pasar berbasis data, dan perancangan pengalaman produk digital (UI/UX). Memiliki pengalaman memimpin tim dalam kompetisi business plan nasional serta merancang strategi go-to-market untuk UMKM lokal.','revigrace.works@gmail.com','0882-3147-7818','Sidoarjo, Indonesia','1793855095_1ab4aff2.jpeg','#','2026-11-05 05:05:39');
+/*!40000 ALTER TABLE `profile` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `project_categories`
+--
+
+DROP TABLE IF EXISTS `project_categories`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `project_categories` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `category_name` varchar(100) NOT NULL,
+  `slug` varchar(100) NOT NULL,
+  `sort_order` tinyint(3) unsigned NOT NULL DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_slug` (`slug`)
+) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `project_categories`
+--
+
+LOCK TABLES `project_categories` WRITE;
+/*!40000 ALTER TABLE `project_categories` DISABLE KEYS */;
+INSERT INTO `project_categories` VALUES (1,'Web Development','web-development',1,'2026-11-19 08:58:33'),(2,'Mobile App','mobile-app',2,'2026-11-19 08:58:33'),(3,'UI/UX Design','ui-ux-design',3,'2026-11-19 08:58:33'),(4,'Data & AI','data-ai',4,'2026-11-19 08:58:33'),(5,'Lainnya','lainnya',5,'2026-11-19 08:58:33'),(6,'Business Planning','business-planning',10,'2026-11-19 08:58:33'),(7,'Digital Marketing','digital-marketing',11,'2026-11-19 08:58:33'),(9,'Research & Community Projects','research-community-projects',13,'2026-11-19 08:58:33'),(10,'Website & Application','website-application',14,'2026-11-19 08:58:33');
+/*!40000 ALTER TABLE `project_categories` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `project_images`
+--
+
+DROP TABLE IF EXISTS `project_images`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `project_images` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `project_id` int(11) NOT NULL,
+  `image_path` varchar(255) NOT NULL,
+  `sort_order` int(11) DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_project_id` (`project_id`),
+  CONSTRAINT `fk_project_images_project` FOREIGN KEY (`project_id`) REFERENCES `projects` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `project_images`
+--
+
+LOCK TABLES `project_images` WRITE;
+/*!40000 ALTER TABLE `project_images` DISABLE KEYS */;
+INSERT INTO `project_images` VALUES (1,2,'1795229629_2657a7bc.jpg',1,'2026-11-21 02:35:31'),(3,4,'1795233025_63cd238b.jpg',1,'2026-11-21 03:50:25'),(4,4,'1795233025_77a21d2e.jpg',2,'2026-11-21 03:50:25'),(5,4,'1795233025_b89e60f0.jpg',3,'2026-11-21 03:50:25');
+/*!40000 ALTER TABLE `project_images` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `projects`
+--
+
+DROP TABLE IF EXISTS `projects`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `projects` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `title` varchar(150) NOT NULL,
+  `category_id` int(10) unsigned DEFAULT NULL,
+  `slug` varchar(180) NOT NULL,
+  `category` varchar(80) NOT NULL,
+  `short_description` varchar(255) DEFAULT NULL,
+  `description` text DEFAULT NULL,
+  `role` varchar(120) DEFAULT NULL,
+  `process` text DEFAULT NULL,
+  `result` text DEFAULT NULL,
+  `tools` text DEFAULT NULL,
+  `thumbnail` varchar(255) DEFAULT NULL,
+  `project_url` varchar(255) DEFAULT NULL,
+  `repository_url` varchar(255) DEFAULT NULL,
+  `is_featured` tinyint(1) DEFAULT 0,
+  `status` enum('draft','published') DEFAULT 'published',
+  `sort_order` int(11) DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `slug` (`slug`),
+  KEY `fk_projects_category` (`category_id`),
+  CONSTRAINT `fk_projects_category` FOREIGN KEY (`category_id`) REFERENCES `project_categories` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `projects`
+--
+
+LOCK TABLES `projects` WRITE;
+/*!40000 ALTER TABLE `projects` DISABLE KEYS */;
+INSERT INTO `projects` VALUES (1,'Back to School',7,'back-to-school','Digital Marketing','Flayer Back to School untuk sosial media Universitas Anwar Medika','','Magang','','','Photoshop','1795233038_6d97baac.jpg','https://pitch.example.com/ecobite','',0,'published',1,'2026-11-05 04:49:17','2026-11-21 03:50:38'),(2,'Foto kita blurr',7,'foto-kita-blurr','Digital Marketing','Branding sosial media UAM CAMPUS','','Magang','','','Photoshop','1795229629_be401e2d.jpg','https://instagram.com/kopikenangannusantara','',0,'published',2,'2026-11-05 04:49:17','2026-11-21 02:53:49'),(4,'User Interface bertema \"Gejalaku\"',3,'user-interface-bertema-gejalaku','UI/UX Design','\"Gejalaku\" adalah mobile App yang berfungsi sebagai tempat para pengguna menyimpan riwayat sakit guna melihat penyakit yang dirasakan.','','Mahasiswa','','','Figma','1795233025_53e9e496.jpg','https://www.figma.com/design/TnfCjbJacaEYiqzDsi8bog/PROJEK-UI-UX-GEJALAKU?node-id=0-1&t=8g7hFWsRU3aG6MkJ-1','',0,'published',4,'2026-11-05 04:49:17','2026-11-21 03:50:25');
+/*!40000 ALTER TABLE `projects` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `skill_categories`
+--
+
+DROP TABLE IF EXISTS `skill_categories`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `skill_categories` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `category_name` varchar(100) NOT NULL,
+  `sort_order` tinyint(3) unsigned NOT NULL DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_name` (`category_name`)
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `skill_categories`
+--
+
+LOCK TABLES `skill_categories` WRITE;
+/*!40000 ALTER TABLE `skill_categories` DISABLE KEYS */;
+INSERT INTO `skill_categories` VALUES (1,'Administration & Data',1,'2026-11-19 09:29:51'),(2,'Business & Entrepreneurship',2,'2026-11-19 09:29:51'),(3,'Communication',3,'2026-11-19 09:29:51'),(4,'Digital Tools',4,'2026-11-19 09:29:51'),(5,'Personal / Soft Skills',5,'2026-11-19 09:29:51'),(6,'UI/UX',6,'2026-11-21 03:55:43'),(7,'Digital Marketing',7,'2026-11-21 03:56:09');
+/*!40000 ALTER TABLE `skill_categories` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `skills`
+--
+
+DROP TABLE IF EXISTS `skills`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `skills` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `skill_name` varchar(100) NOT NULL,
+  `category` varchar(80) NOT NULL,
+  `proficiency` varchar(30) DEFAULT NULL,
+  `description` varchar(255) DEFAULT NULL,
+  `sort_order` int(11) DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `skills`
+--
+
+LOCK TABLES `skills` WRITE;
+/*!40000 ALTER TABLE `skills` DISABLE KEYS */;
+INSERT INTO `skills` VALUES (1,'Google Analytics 4 & Data Studio','Digital Tools','Advanced','Pelacakan konversi e-commerce, user journey mapping, dan pembuatan custom dashboard.',1,'2026-11-05 04:49:17','2026-11-05 04:49:17'),(2,'Meta Ads & TikTok Ads Manager','Digital Tools','Advanced','Perencanaan funnel kampanye iklan berbayar, audience targeting, dan A/B testing materi kreatif.',2,'2026-11-05 04:49:17','2026-11-05 04:49:17'),(3,'Figma & FigJam (UI/UX)','Digital Tools','Intermediate','Wireframing, interactive prototyping, dan usability testing produk digital.',3,'2026-11-05 04:49:17','2026-11-05 04:49:17'),(4,'Business Model Canvas & Lean Canvas','Business & Entrepreneurship','Advanced','Pemetaan proposisi nilai, analisis struktur biaya, aliran pendapatan, dan strategi kemitraan.',4,'2026-11-05 04:49:17','2026-11-05 04:49:17'),(5,'Financial Modeling & Unit Economics','Business & Entrepreneurship','Intermediate','Proyeksi arus kas, perhitungan CAC & LTV, BEP analysis, dan sensitivitas bisnis.',5,'2026-11-05 04:49:17','2026-11-05 04:49:17'),(7,'Microsoft Excel & Google Sheets','Administration & Data','Advanced','VLOOKUP/XLOOKUP, Pivot Table,dan visualisasi data bisnis.',7,'2026-11-05 04:49:17','2026-11-21 03:56:42'),(8,'Public Speaking','Communication','Advanced','Penyampaian presentasi ide bisnis  dan promosi yang persuasif di hadapan audiens luas.',8,'2026-11-05 04:49:17','2026-11-21 03:57:30'),(9,'Copywriting & Content Strategy','Communication','Intermediate','Penulisan naskah iklan, optimasi headline, dan storytelling brand emosional.',9,'2026-11-05 04:49:17','2026-11-05 04:49:17'),(12,'Canva','Digital Tools','Intermediate','Membuat desain Flayer, Undangan, Banner, Logo, Poster Dst',9,'2026-11-21 03:59:00','2026-11-21 03:59:00');
+/*!40000 ALTER TABLE `skills` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `social_links`
+--
+
+DROP TABLE IF EXISTS `social_links`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `social_links` (
-  `id` INT AUTO_INCREMENT PRIMARY KEY,
-  `platform` VARCHAR(50) NOT NULL,
-  `url` VARCHAR(255) NOT NULL,
-  `is_active` TINYINT(1) DEFAULT 1,
-  `sort_order` INT DEFAULT 0,
-  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `platform` varchar(50) NOT NULL,
+  `url` varchar(255) NOT NULL,
+  `is_active` tinyint(1) DEFAULT 1,
+  `sort_order` int(11) DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- SEED DATA
+--
+-- Dumping data for table `social_links`
+--
 
--- Admin (Default: admin / admin123)
-INSERT INTO `admins` (`id`, `username`, `password_hash`, `created_at`)
-VALUES (1, 'admin', '$2y$10$uaMypjUm03aN.oZUMu.pVukI/2RKxEyYlTUr96AAKnlEk3UqPN.vK', NOW());
+LOCK TABLES `social_links` WRITE;
+/*!40000 ALTER TABLE `social_links` DISABLE KEYS */;
+INSERT INTO `social_links` VALUES (1,'Instagram','https://www.instagram.com/rvgracee?dmpr=dWt2aGtqbWl2ZXhz',1,1,'2026-11-05 04:49:17','2026-11-20 08:25:03');
+/*!40000 ALTER TABLE `social_links` ENABLE KEYS */;
+UNLOCK TABLES;
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
--- Profile: Mahasiswa Bisnis Digital
-INSERT INTO `profile` (`id`, `full_name`, `headline`, `about_me`, `email`, `phone`, `location`, `avatar`, `cv_path`)
-VALUES (
-  1,
-  'Nadia Saraswati',
-  'Mahasiswa Bisnis Digital | Turning Ideas Into Meaningful Digital Experiences',
-  'Saya adalah seorang mahasiswa Bisnis Digital yang memiliki antusiasme tinggi pada pengembangan model bisnis terukur, strategi pemasaran digital, riset pasar berbasis data, dan perancangan pengalaman produk digital (UI/UX). Memiliki pengalaman memimpin tim dalam kompetisi business plan nasional serta merancang strategi go-to-market untuk UMKM lokal.',
-  'nadia.saraswati@student.ac.id',
-  '+62 812-9876-5432',
-  'Jakarta, Indonesia',
-  'avatar-default.png',
-  '#'
-);
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Project Categories Master Data
-INSERT INTO `project_categories` (`id`, `category_name`, `slug`, `sort_order`)
-VALUES
-(1, 'Web Development', 'web-development', 1),
-(2, 'Mobile App', 'mobile-app', 2),
-(3, 'UI/UX Design', 'ui-ux-design', 3),
-(4, 'Data & AI', 'data-ai', 4),
-(5, 'Lainnya', 'lainnya', 5),
-(6, 'Business Planning', 'business-planning', 6),
-(7, 'Digital Marketing', 'digital-marketing', 7),
-(8, 'Research & Community Projects', 'research-community-projects', 8),
-(9, 'Website & Application', 'website-application', 9);
-
--- Projects
-INSERT INTO `projects` (`title`, `category_id`, `slug`, `category`, `short_description`, `description`, `role`, `process`, `result`, `tools`, `thumbnail`, `project_url`, `repository_url`, `is_featured`, `status`, `sort_order`)
-VALUES
-(
-  'EcoBite - Smart Food Waste Marketplace Business Plan',
-  6,
-  'ecobite-smart-food-waste-marketplace',
-  'Business Planning',
-  'Rencana bisnis platform marketplace B2B dan B2C untuk mengoptimalkan surplus makanan dari hotel dan resto dengan model penetapan harga dinamis.',
-  'EcoBite adalah inisiatif bisnis berkelanjutan yang menghubungkan industri F&B yang memiliki stok makanan berlebih layak konsumsi dengan konsumen dan pelaku UMKM olahan pangan secara diskon.',
-  'Lead Business Strategist & Financial Modeler',
-  'Melakukan riset primer terhadap 30 restoran, validasi problem-solution fit, penyusunan Financial Projection 3 tahun, serta pembuatan pitch deck kompetisi.',
-  'Meraih Juara 2 pada National Business Plan Competition 2024 dan validasi LOI dari 3 mitra kuliner lokal.',
-  'Notion, Microsoft Excel, Canva, Google Forms',
-  'project-1.jpg',
-  'https://pitch.example.com/ecobite',
-  NULL,
-  1,
-  'published',
-  1
-),
-(
-  'Campaign Go-Digital: Optimalisasi Omzet UMKM Kopi Kenangan Nusantara',
-  7,
-  'campaign-go-digital-umkm-kopi',
-  'Digital Marketing',
-  'Strategi pemasaran digital terintegrasi melalui Meta Ads, optimasi TikTok Shop, dan kolaborasi micro-influencer lokal.',
-  'Kampanye pemasaran digital selama 3 bulan untuk membantu brand kopi lokal meningkatkan brand recall dan konversi penjualan langsung di channel digital.',
-  'Digital Campaign Strategist',
-  'Audit channel eksisting, riset persona pembeli, produksi konten edukasi storytelling, A/B testing ad copy di Meta Ads, dan evaluasi ROAS.',
-  'Peningkatan engagement rate Instagram sebesar 185% dan kenaikan total omzet bulanan sebesar 42% selama periode kampanye.',
-  'Meta Ads Manager, TikTok Creative Center, CapCut, Google Analytics',
-  'project-2.jpg',
-  'https://instagram.com/kopikenangannusantara',
-  NULL,
-  1,
-  'published',
-  2
-),
-(
-  'AgriHub - Redesain UI/UX Platform Lelang Hasil Tani Digital',
-  3,
-  'agrihub-redesain-ui-ux-platform-lelang-tani',
-  'UI/UX Design',
-  'Perancangan antarmuka aplikasi mobile yang intuitif bagi kelompok tani untuk mengikuti lelang hasil panen langsung ke distributor kota.',
-  'Proyek perancangan produk digital yang berfokus pada kemudahan aksesibilitas bagi petani dengan keterbatasan literasi teknologi tinggi.',
-  'UI/UX Researcher & Product Designer',
-  'User interview 15 petani, pembuatan User Persona, Customer Journey Map, Wireframing Lo-Fi hingga Hi-Fi Prototype interaktif dan Usability Testing SUS Score.',
-  'Skor SUS (System Usability Scale) meningkat dari 54 (kategori kurang) menjadi 82 (kategori Excellent) pada fase pengujian akhir.',
-  'Figma, FigJam, Maze, Whimsical',
-  'project-3.jpg',
-  'https://figma.com/proto/agrihub-preview',
-  NULL,
-  1,
-  'published',
-  3
-),
-(
-  'Riset Valuasi Pasar & Perilaku Konsumen Gen-Z pada Quick Commerce',
-  8,
-  'riset-pasar-quick-commerce-gen-z',
-  'Research & Community Projects',
-  'Laporan riset pasar komprehensif mengenai frekuensi pembelian impulsif dan loyalitas pelanggan aplikasi Quick Commerce di area Jabodetabek.',
-  'Penelitian akademik kuantitatif dan kualitatif untuk memetakan faktor penentu kepuasan pelanggan terhadap kecepatan pengiriman barang kebutuhan harian.',
-  'Lead Academic Researcher',
-  'Penyebaran kuesioner kepada 320 responden Gen-Z, pengolahan data regresi linier berganda menggunakan SPSS, dan penyusunan policy recommendation.',
-  'Dipresentasikan pada Seminar Nasional Manajemen & Bisnis Digital 2024 dan diterbitkan dalam prosiding universitas.',
-  'SPSS, Google Sheets, Mendeley, Tableau',
-  'project-4.jpg',
-  'https://researchgate.net/publication/quick-commerce-genz',
-  NULL,
-  0,
-  'published',
-  4
-),
-(
-  'KaryaKita - Portal Portofolio Kreatif Mahasiswa Vokasi',
-  9,
-  'karyakita-portal-portofolio-mahasiswa',
-  'Website & Application',
-  'Prototipe web showcase karya tugas akhir mahasiswa desain dan multimedia yang terhubung langsung dengan talent recruiter industri kreatif.',
-  'Pengembangan platform web interaktif untuk menjembatani mahasiswa tingkat akhir dengan industri agensi periklanan dan software house.',
-  'Product Manager & Frontend Collaborator',
-  'Product backlog prioritization, perancangan skema relasional, dan koordinasi sprint tim developer menggunakan metodologi Scrum.',
-  'Berhasil mengumpulkan 120 karya proyek mahasiswa pada pameran expo tahunan kampus.',
-  'Trello, PHP Native, Bootstrap 5, MySQL',
-  'project-5.jpg',
-  'https://karyakita.example.com',
-  'https://github.com/example/karyakita',
-  0,
-  'published',
-  5
-);
-
--- Experiences
-INSERT INTO `experiences` (`type`, `title`, `organization`, `period_start`, `period_end`, `is_current`, `description`, `achievements`, `sort_order`)
-VALUES
-(
-  'Work',
-  'Digital Marketing & Growth Intern',
-  'PT Inovasi Niaga Digital',
-  '2024-01-15',
-  NULL,
-  1,
-  'Bertanggung jawab merancang kalender konten media sosial, menganalisis performa kata kunci SEO on-page, dan mengeksekusi kampanye newsletter mingguan.',
-  'Meningkatkan open rate email marketing dari 18% ke 29.4% serta mengelola budget iklan digital bulanan dengan ROAS rata-rata 3.8x.',
-  1
-),
-(
-  'Organization',
-  'Ketua Departemen Kewirausahaan & Kemitraan',
-  'BEM Fakultas Ekonomi & Bisnis',
-  '2023-02-01',
-  '2024-01-01',
-  0,
-  'Memimpin divisi berisi 14 anggota dalam program inkubasi bisnis rintisan mahasiswa dan menjalin kerjasama sponsorship dengan 8 perusahaan swasta.',
-  'Menyelenggarakan Business Pitch Day kampus dengan total pendanaan bibit senilai Rp 50.000.000 untuk 5 startup mahasiswa terpilih.',
-  2
-),
-(
-  'Committee',
-  'Project Officer - Digital Business Summit 2023',
-  'Himpunan Mahasiswa Bisnis Digital',
-  '2023-06-01',
-  '2023-11-30',
-  0,
-  'Mengkoordinasikan keseluruhan operasional konferensi nasional yang dihadiri oleh lebih dari 500 peserta umum dan 12 pembicara industri teknologi.',
-  'Mencapai 100% target penjualan tiket dan meraih kepuasan peserta (CSAT) 4.8/5.0.',
-  3
-),
-(
-  'Competition',
-  'Juara 2 - National Business Plan Competition 2024',
-  'Universitas Brawijaya Entrepreneurship Week',
-  '2024-05-01',
-  '2024-05-20',
-  0,
-  'Menyusun proposal inovasi bisnis sirkular ekonomi EcoBite bersaing dengan 150+ tim dari perguruan tinggi se-Indonesia.',
-  'Meraih penghargaan Best Pitching Performance dari dewan juri modal ventura.',
-  4
-),
-(
-  'Volunteer',
-  'Mentor Relawan Literasi Digital UMKM Desa',
-  'Gerakan Digitalisasi UMKM Nusantara',
-  '2023-08-01',
-  '2023-09-30',
-  0,
-  'Memberikan pelatihan praktis foto produk katalog, pencatatan keuangan digital berbasis aplikasi, dan onboarding marketplace kepada 25 pengrajin lokal.',
-  '18 dari 25 UMKM berhasil memiliki toko online aktif dan menerima pesanan digital pertama mereka.',
-  5
-);
-
--- Education
-INSERT INTO `education` (`institution`, `degree`, `major`, `period_start`, `period_end`, `is_current`, `description`, `sort_order`)
-VALUES
-(
-  'Universitas Pembangunan Nasional Veteran',
-  'Sarjana Bisnis Digital (S.Bns)',
-  'Bisnis Digital & Teknologi Informasi',
-  '2022-08-01',
-  NULL,
-  1,
-  'IPK Sementara: 3.86/4.00. Fokus konsentrasi pada Digital Venture Creation, E-Commerce Strategy, dan Data Analytics for Business. Aktif dalam riset pasar dan kompetisi kewirausahaan.',
-  1
-),
-(
-  'SMA Negeri 1 Jakarta',
-  'Sekolah Menengah Atas',
-  'Matematika & Ilmu Pengetahuan Alam (MIPA)',
-  '2019-07-01',
-  '2022-06-01',
-  0,
-  'Lulus dengan predikat nilai akademik sangat memuaskan. Menjabat sebagai Koordinator Mading Sekolah dan Juara Lomba Debat Ekonomi Pelajar.',
-  2
-);
-
--- Skill Categories Master Data
-INSERT INTO `skill_categories` (`id`, `category_name`, `sort_order`)
-VALUES
-(1, 'Digital Tools', 1),
-(2, 'Business & Entrepreneurship', 2),
-(3, 'Administration & Data', 3),
-(4, 'Communication', 4),
-(5, 'Personal / Soft Skills', 5);
-
--- Skills (Menggunakan label proficiency terukur: Beginner, Intermediate, Advanced)
-INSERT INTO `skills` (`skill_name`, `category`, `proficiency`, `description`, `sort_order`)
-VALUES
-('Google Analytics 4 & Data Studio', 'Digital Tools', 'Advanced', 'Pelacakan konversi e-commerce, user journey mapping, dan pembuatan custom dashboard.', 1),
-('Meta Ads & TikTok Ads Manager', 'Digital Tools', 'Advanced', 'Perencanaan funnel kampanye iklan berbayar, audience targeting, dan A/B testing materi kreatif.', 2),
-('Figma & FigJam (UI/UX)', 'Digital Tools', 'Intermediate', 'Wireframing, interactive prototyping, dan usability testing produk digital.', 3),
-('Business Model Canvas & Lean Canvas', 'Business & Entrepreneurship', 'Advanced', 'Pemetaan proposisi nilai, analisis struktur biaya, aliran pendapatan, dan strategi kemitraan.', 4),
-('Financial Modeling & Unit Economics', 'Business & Entrepreneurship', 'Intermediate', 'Proyeksi arus kas, perhitungan CAC & LTV, BEP analysis, dan sensitivitas bisnis.', 5),
-('Riset Pasar & Competitor Benchmarking', 'Administration & Data', 'Advanced', 'Riset primer kuantitatif, analisis SWOT komparatif, dan tren pertumbuhan industri.', 6),
-('Microsoft Excel & Google Sheets', 'Administration & Data', 'Advanced', 'VLOOKUP/XLOOKUP, Pivot Table, scenario manager, dan visualisasi data bisnis.', 7),
-('Public Speaking & Pitching', 'Communication', 'Advanced', 'Penyampaian presentasi ide bisnis yang persuasif di hadapan investor dan audiens luas.', 8),
-('Copywriting & Content Strategy', 'Communication', 'Intermediate', 'Penulisan naskah iklan, optimasi headline, dan storytelling brand emosional.', 9),
-('Agile Framework & Scrum Teamwork', 'Personal / Soft Skills', 'Intermediate', 'Kolaborasi sprint, task tracking berbasis Trello/Jira, dan fleksibilitas adaptasi ide.', 10);
-
--- Messages
-INSERT INTO `messages` (`sender_name`, `sender_email`, `subject`, `message`, `is_read`, `sent_at`)
-VALUES
-(
-  'Rizky Pratama',
-  'rizky@fintechstar.id',
-  'Peluang Magang Product & Business Strategy',
-  'Halo Nadia, kami melihat portofolio business plan EcoBite Anda dan sangat terkesan dengan ketajaman unit economics yang Anda rancang. Kami ingin mengajak Anda berbincang mengenai peluang internship posisi Business Analyst di tim kami.',
-  0,
-  NOW()
-),
-(
-  'Dewi Anggraini',
-  'dewi.anggraini@umkm-kreatif.com',
-  'Konsultasi Go-Digital Produk Olahan Pangan',
-  'Selamat siang Nadia, kami pengelola komunitas UMKM kuliner di Bandung ingin mengundang Anda sebagai pemateri sesi sharing session Digital Marketing untuk UMKM.',
-  1,
-  DATE_SUB(NOW(), INTERVAL 1 DAY)
-);
-
--- Social Links
-INSERT INTO `social_links` (`platform`, `url`, `is_active`, `sort_order`)
-VALUES
-('LinkedIn', 'https://linkedin.com/in/nadia-saraswati', 1, 1),
-('Instagram', 'https://instagram.com/nadiasaraswati', 1, 2),
-('GitHub', 'https://github.com/nadiasaraswati', 1, 3);
+-- Dump completed on 2026-11-25 15:07:40
